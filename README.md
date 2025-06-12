@@ -1,293 +1,318 @@
-# Zielfernrohr-Klicksrechner (Riflescope Clicks Calculator)
+# 🎯 Riflescope Clicks Calculator
 
-[![Python Version](https://img.shields.io/badge/python-3.7%2B-blue.svg)](https://python.org)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
-[![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)]()
+Ein professioneller Zielfernrohr-Klicksrechner für präzises Schießen mit deutscher Benutzeroberfläche.
 
-Ein präzises Tool zur Berechnung der erforderlichen Klicks am Zielfernrohr basierend auf Waffe, Munition und Entfernung für Präzisionsschießen.
+![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-## 🎯 Features
+## 📖 Beschreibung
 
-### Hauptfunktionen
-- **🔢 Klickberechnung**: Automatische Berechnung der erforderlichen Zielfernrohr-Anpassungen
-- **🔫 Waffen-Management**: Verwaltung verschiedener Waffen mit Kaliberdaten
-- **🎯 Munitions-Management**: Verwaltung verschiedener Munitionstypen
-- **📏 Entfernungs-Management**: Konfiguration verschiedener Schussentfernungen
-- **💾 Ergebnis-Speicherung**: Persistente Speicherung von Einstellungen und Berechnungen
+Diese Anwendung hilft Schützen dabei, die korrekten Zielfernrohr-Anpassungen zu berechnen, um ihre Waffe zu nullen oder für verschiedene Schussentfernungen zu kompensieren. Der Rechner konvertiert zwischen MOA (Minute of Angle), MIL (Milliradian) und Klickwerten basierend auf den Spezifikationen Ihres Zielfernrohrs.
 
-### Technische Features
-- **🗄️ SQLite-Datenbank**: Lokale Datenspeicherung ohne externe Abhängigkeiten
-- **🖼️ GUI-Interface**: Benutzerfreundliche grafische Oberfläche mit tkinter
-- **🌍 Cross-Platform**: Läuft auf Windows, macOS und Linux
-- **🍎 Apple Silicon Support**: Native Unterstützung für M1/M2/M3 Macs
-- **📝 Umfassendes Logging**: Detaillierte Protokollierung für Debugging und Analyse
+## ✨ Features
 
-## 🚀 Installation & Verwendung
+- 🎯 **Präzise Klickberechnung** - Berechnung der benötigten Zielfernrohr-Anpassungen
+- 🔫 **Waffen-Management** - Verwaltung verschiedener Waffen und deren Kaliber
+- 🎯 **Munitions-Datenbank** - Speicherung und Verwaltung von Munitionsdaten
+- 📏 **Entfernungs-Konfiguration** - Flexible Entfernungseinstellungen (Meter/Yards)
+- 💾 **Ergebnis-Speicherung** - Speichern und Abrufen von Berechnungsergebnissen
+- 🖥️ **Intuitive GUI** - Benutzerfreundliche Tkinter-Oberfläche
+- 🗃️ **SQLite-Datenbank** - Lokale Datenspeicherung ohne externe Abhängigkeiten
+- 📱 **Cross-Platform** - Läuft auf Windows, macOS und Linux
 
-### Option 1: Fertige Executables (Empfohlen)
-Laden Sie die fertige Anwendung für Ihr System herunter:
+## 🎯 Unterstützte Einheiten
 
-- **🪟 Windows**: `RiflescopeCalculator.exe` oder `RiflescopeCalculator-Setup.exe`
-- **🍎 macOS**: `Riflescope Clicks Calculator.app` 
-- **🐧 Linux**: `RiflescopeCalculator` Binary
+- **MOA (Minute of Angle)**: 1 MOA ≈ 1.047 Zoll bei 100 Yards
+- **MIL (Milliradian)**: 1 MIL = 3.6 Zoll bei 100 Yards
+- **Klicks**: Abhängig von der Zielfernrohr-Spezifikation
 
-Einfach herunterladen und starten - keine Installation erforderlich!
+## 📋 Systemanforderungen
 
-### Option 2: Python-Installation (Entwickler)
+- **Python**: 3.8 oder höher (nur für Python-Ausführung)
+- **Betriebssystem**: Windows 10+, macOS 10.13+, oder moderne Linux-Distribution
+- **RAM**: Mindestens 512 MB
+- **Speicher**: 50 MB freier Speicherplatz
+
+## 🚀 Installation & Start
+
+Sie haben zwei Hauptoptionen zur Verwendung der Anwendung:
+
+### 🐍 Option 1: Python-Ausführung (Entwicklung/Source)
+
+**Für Entwickler oder wenn Sie den Quellcode bearbeiten möchten:**
+
 ```bash
 # Repository klonen
-git clone https://github.com/username/riflescope-clicks-calculator.git
-cd riflescope-clicks-calculator
+git clone https://github.com/yourusername/Riflescope-Clicks-Calculator.git
+cd Riflescope-Clicks-Calculator
 
-# Virtuelle Umgebung erstellen (empfohlen)
+# Optional: Virtual Environment erstellen
 python -m venv venv
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # macOS/Linux
+source venv/bin/activate  # Linux/macOS
+# oder
+venv\Scripts\activate     # Windows
 
-# Anwendung starten
+# Abhängigkeiten installieren (meist nicht nötig - Standard-Bibliotheken)
+pip install -r requirements.txt
+
+# 🎯 ANWENDUNG STARTEN
 python run.py
 ```
 
-## 📖 Erste Schritte
+### 📦 Option 2: Executable erstellen (Distribution)
 
-1. **Starten Sie die Anwendung**
-2. **Konfigurieren Sie Ihre Ausrüstung** über das Einstellungen-Menü:
-   - Waffe hinzufügen (Kaliber, Eigenschaften)
-   - Munitionstypen definieren
-   - Schussentfernungen festlegen
-3. **Erstellen Sie Ergebnisse** für Waffen-/Munitions-/Entfernungskombinationen
-4. **Berechnen Sie Klicks** basierend auf aktueller Position und Zielentfernung
-
-## 🔨 Executable erstellen
-
-Das Projekt enthält ein universelles Build-Script für alle Plattformen:
+**Für die Erstellung eigenständiger Executables ohne Python-Installation:**
 
 ```bash
-# Einfaches Executable für aktuelle Plattform
-python scripts/build_executable.py
+# Repository klonen (falls noch nicht geschehen)
+git clone https://github.com/yourusername/Riflescope-Clicks-Calculator.git
+cd Riflescope-Clicks-Calculator
 
-# Mit Tests und Bereinigung
-python scripts/build_executable.py --clean --test
 
-# Portable Pakete erstellen
-python scripts/build_executable.py --portable
+# 🛠️ EXECUTABLE ERSTELLEN UND STARTEN
 
-# Windows Installer erstellen
-python scripts/build_executable.py --installer
+# Interaktive Platform-Auswahl
+python scripts/build.py
 
-# Komplette Distribution (alles)
-python scripts/build_executable.py --all
+# Oder spezifische Plattform:
+python scripts/build.py --windows    # Windows .exe
+python scripts/build.py --macos      # macOS .app
+python scripts/build.py --linux      # Linux Binary
+
+# Nach dem Build finden Sie die Executables in:
+# Windows: dist/riflescope-calculator.exe
+# macOS: dist/Riflescope Calculator.app
+# Linux: dist/riflescope-calculator
 ```
 
-### Build-Voraussetzungen:
-- Python 3.7+ 
-- PyInstaller wird automatisch installiert
-- Windows: pywin32 wird automatisch installiert
-- macOS: macholib wird automatisch installiert
-- Linux: Keine zusätzlichen Dependencies
+## 🎮 Verwendung
 
-### Unterstützte Build-Ausgaben:
-- **🪟 Windows**: `.exe` + NSIS Setup-Installer
-- **🍎 macOS**: `.app` Bundle (Intel + Apple Silicon)
-- **🐧 Linux**: Native Binary + `.tar.gz` Pakete
+### Erste Schritte
 
-### Build-Troubleshooting:
-```bash
-# Bei Build-Problemen:
-python scripts/build_executable.py --clean --test --keep-files
+1. **Waffe hinzufügen**: Gehen Sie zu `Einstellungen → Waffen` und fügen Sie Ihre Waffe hinzu
+2. **Munition konfigurieren**: Fügen Sie passende Munition zu Ihrem Kaliber hinzu
+3. **Entfernungen einstellen**: Konfigurieren Sie Ihre Schussentfernungen
+4. **Ergebnisse speichern**: Geben Sie Nullungs-Ergebnisse für Ihre Kombinationen ein
 
-# Diagnose-Tools verwenden:
-python debug/diagnostic.py
-python debug/standalone_tests.py
+### Hauptfunktionen
+
+#### 1. Klicks berechnen
+```
+1. Wählen Sie Waffe, Munition und Entfernung
+2. Geben Sie Ihre aktuelle Zielfernrohr-Position ein
+3. Klicken Sie "Klicks berechnen"
+4. Erhalten Sie die Anpassungsrichtung und Klickanzahl
 ```
 
-## 🧪 Testing & Debugging
+#### 2. Daten verwalten
+- **Waffen**: Name und Kaliber (z.B. ".308 Win", "6.5 mm")
+- **Munition**: Munitionstyp und kompatibles Kaliber
+- **Entfernungen**: Schussentfernungen in Meter oder Yards
+- **Ergebnisse**: Gespeicherte Nullungs-Positionen
 
-### Test-System
-```bash
-# Alle Tests ausführen
-python tests/run_all_tests.py
+### Beispiel-Workflow
 
-# Nur Unit-Tests
-python tests/run_all_tests.py --unit
-
-# Schnelle Funktionalitätsprüfung
-python tests/run_all_tests.py --quick
-
-# Manuelle Komponententests
-python tests/run_all_tests.py --manual
+```
+🔫 Waffe: "Precision Rifle" (.308 Win)
+🎯 Munition: "Match Grade HPBT" (.308 Win)  
+📏 Entfernung: 200m
+📍 Aktuelle Position: 15 Klicks
+🎯 Zielposition: 23 Klicks
+➡️ Ergebnis: 8 Klicks nach rechts
 ```
 
-### Debug-Tools
+## 🔧 Build-System (Für Entwickler)
+
+Das Projekt bietet ein umfassendes Cross-Platform Build-System:
+
+### Schnellstart Build
+
 ```bash
-# Systemdiagnose bei Problemen
-python debug/diagnostic.py
+# 🎯 EINFACHSTER WEG - Interaktive Auswahl
+python scripts/build.py
 
-# Komponententests ohne GUI
-python debug/standalone_tests.py
+# Folgen Sie dem interaktiven Menü:
+# 1. 🪟 Windows Build (.exe + Installer)
+# 2. 🍎 macOS Build (.app Bundle)  
+# 3. 🐧 Linux Build (Native Binary)
+# 4. 🌍 Alle Plattformen
+```
 
-# App mit erweiterten Debug-Informationen
-python debug/debug_run.py
+### Erweiterte Build-Optionen
+
+```bash
+# Alle Plattformen auf einmal
+python scripts/build.py --all
+
+# Spezifische Plattformen mit Optionen
+python scripts/build.py --windows --installer --portable
+python scripts/build.py --macos --universal --portable
+python scripts/build.py --linux --appimage --portable
+
+# Platform-spezifische Build-Scripts
+python scripts/build_windows.py --installer  # Windows mit Installer
+python scripts/build_mac_os.py --universal   # macOS Universal Binary
+python scripts/build_linux.py --appimage     # Linux AppImage-ready
+```
+
+### Build-Optionen im Detail
+
+| Option | Beschreibung | Verfügbar für |
+|--------|--------------|---------------|
+| `--clean` | Bereinigung vor Build | Alle |
+| `--test` | Tests vor Build ausführen | Alle |
+| `--portable` | Portable Pakete (.zip/.tar.gz) | Alle |
+| `--installer` | Installer erstellen | Windows, macOS |
+| `--universal` | Universal Binary (Intel + Apple Silicon) | macOS |
+| `--appimage` | AppImage-ready Build | Linux |
+| `--keep-files` | Build-Dateien nicht löschen | Alle |
+| `--no-verify` | Verifikation überspringen | Alle |
+
+### Nach dem Build
+
+```bash
+# Build-Ergebnisse finden Sie in:
+dist/                          # Haupt-Executables
+├── riflescope-calculator.exe  # Windows
+├── Riflescope Calculator.app/ # macOS  
+└── riflescope-calculator      # Linux
+
+# Mit --portable Option zusätzlich:
+dist/portable/                 # Portable Pakete
+├── riflescope-calculator-windows.zip
+├── riflescope-calculator-macos.tar.gz
+└── riflescope-calculator-linux.tar.gz
 ```
 
 ## 📁 Projektstruktur
 
 ```
-riflescope-clicks-calculator/
-├── 📂 src/                     # 🎯 Hauptquellcode
-│   ├── main.py                # 🚀 Haupteinstiegspunkt
-│   ├── config/                # ⚙️ Konfiguration
-│   ├── core/                  # 🔧 Kernkomponenten & Logging
-│   ├── database/              # 🗄️ Datenbankschicht
-│   ├── gui/                   # 🖼️ Benutzeroberfläche
-│   └── utils/                 # 🛠️ Hilfsfunktionen
-├── 📂 tests/                  # 🧪 Test-Suite
-│   ├── unit/                  # Unit-Tests
-│   ├── integration/           # Integrationstests
-│   ├── fixtures/              # Test-Daten
-│   └── utils/                 # Test-Hilfsfunktionen
-├── 📂 debug/                  # 🔍 Debug-Tools
-├── 📂 scripts/                # 🚀 Build-Automatisierung
-│   └── build_executable.py   # Universal Build Script
-├── 📂 database/               # 💾 Laufzeit-Datenbank
-├── 📂 logs/                   # 📝 Log-Dateien
-├── 📂 icons/                  # 🎨 Anwendungssymbole
-├── 📄 run.py                  # 🚀 Anwendungs-Startpunkt
-├── 📄 requirements.txt        # 📦 Python-Abhängigkeiten
-└── 📄 README.md               # 📖 Diese Dokumentation
+Riflescope-Clicks-Calculator/
+├── src/                          # Hauptquellcode
+│   ├── main.py                   # Anwendungseinstieg
+│   ├── config/                   # Konfiguration
+│   ├── core/                     # Kern-Module (Logger, etc.)
+│   ├── database/                 # Datenbankmanagement
+│   ├── gui/                      # Benutzeroberfläche
+│   │   ├── main_window.py        # Hauptfenster
+│   │   ├── settings_window.py    # Einstellungsfenster
+│   │   └── components.py         # GUI-Komponenten
+│   ├── models/                   # Datenmodelle
+│   └── utils/                    # Hilfsfunktionen
+├── scripts/                      # Build-Scripts
+│   ├── build.py                  # Universal Build Selector
+│   ├── build_windows.py          # Windows Build
+│   ├── build_mac_os.py           # macOS Build
+│   └── build_linux.py            # Linux Build
+├── icons/                        # Anwendungs-Icons
+├── database/                     # Datenbank-Dateien
+├── run.py                        # Start-Script
+└── requirements.txt              # Python Dependencies
 ```
 
-## 🛠️ Entwicklung
+## 🧪 Tests
 
-### Entwicklungsumgebung einrichten
 ```bash
-# Repository klonen
-git clone <repository-url>
-cd riflescope-clicks-calculator
+# Tests ausführen
+python -m pytest tests/
 
-# Virtuelle Umgebung
-python -m venv venv
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # macOS/Linux
+# Mit Coverage
+python -m pytest tests/ --cov=src
 
-# Dependencies installieren
-pip install -r requirements.txt
-
-# Tests erstellen
-python tests/run_all_tests.py --setup
+# Spezifische Tests
+python -m pytest tests/test_calculator.py
 ```
-
-### Entwicklungs-Workflow
-1. **Komponenten testen**: `python debug/standalone_tests.py`
-2. **Unit-Tests schreiben**: In `tests/unit/`
-3. **App testen**: `python debug/debug_run.py`
-4. **Tests ausführen**: `python tests/run_all_tests.py`
-5. **Build erstellen**: `python scripts/build_executable.py --test`
-
-### Logging-System
-```python
-from src.core import main_logger
-
-main_logger.info("Informationsnachricht")
-main_logger.error("Fehlernachricht", exc_info=True)
-main_logger.debug("Debug-Information")
-```
-
-## 🔧 Troubleshooting
-
-### Erste Hilfe bei Problemen
-```bash
-# 1. Systemdiagnose
-python debug/diagnostic.py
-
-# 2. Komponententests
-python debug/standalone_tests.py
-
-# 3. Debug-Modus
-python debug/debug_run.py
-
-# 4. Test-Struktur prüfen
-python tests/run_all_tests.py --setup
-```
-
-### Häufige Probleme
-
-| Problem | Lösung |
-|---------|--------|
-| App startet nicht | `python debug/diagnostic.py` |
-| Import-Fehler | `python debug/debug_run.py --no-gui` |
-| Tests schlagen fehl | `python tests/run_all_tests.py --setup` |
-| GUI-Framework fehlt | Linux: `sudo apt-get install python3-tk` |
-
-## 🌟 Cross-Platform Support
-
-### Windows
-- ✅ Windows 7, 8, 10, 11 (32/64-bit)
-- ✅ Standalone `.exe` ohne Installation
-- ✅ NSIS Setup-Installer
-- ✅ Portable ZIP-Paket
-
-### macOS
-- ✅ macOS 10.13+ (High Sierra oder neuer)
-- ✅ Intel Macs (x86_64)
-- ✅ Apple Silicon (M1/M2/M3 arm64)
-- ✅ Native `.app` Bundle
-- ✅ Portable `.tar.gz` Paket
-
-### Linux
-- ✅ Ubuntu 18.04+ / Debian 9+
-- ✅ x86_64 und ARM64 (Raspberry Pi)
-- ✅ Native Binary
-- ✅ Portable `.tar.gz` Paket
-- ✅ AppImage-ready Structure
 
 ## 🤝 Beitragen
 
-### Pull Requests willkommen!
-1. **Fork** das Repository
-2. **Tests erstellen**: `python tests/run_all_tests.py --setup`
-3. **Feature entwickeln** mit Tests
-4. **Vollständige Tests**: `python tests/run_all_tests.py --all`
-5. **Build testen**: `python scripts/build_executable.py --test`
-6. **Pull Request** erstellen
+1. Fork das Repository
+2. Erstelle einen Feature-Branch (`git checkout -b feature/amazing-feature`)
+3. Commit deine Änderungen (`git commit -m 'Add amazing feature'`)
+4. Push zum Branch (`git push origin feature/amazing-feature`)
+5. Öffne eine Pull Request
 
-### Entwicklungsstandards
-- 🧪 Alle neuen Features benötigen Tests
-- 📝 Code-Dokumentation in Deutsch
-- 🌍 Cross-Platform Kompatibilität beachten
-- 🔍 Debug-Tools nutzen für Problemdiagnose
+### Development Guidelines
+
+- Verwende deutsche Kommentare und UI-Texte
+- Folge PEP 8 für Python-Code
+- Schreibe Tests für neue Features
+- Aktualisiere die Dokumentation
+
+## 📚 Technische Details
+
+### Architektur
+
+- **Frontend**: Tkinter (Standard Python GUI)
+- **Backend**: SQLite Datenbank
+- **Logging**: Strukturiertes Logging mit Rotation
+- **Configuration**: Zentrale Konfigurationsverwaltung
+- **Models**: Datenmodelle für Type Safety
+
+### Datenbank Schema
+
+```sql
+-- Waffen
+CREATE TABLE weapons (
+    id INTEGER PRIMARY KEY,
+    weapon TEXT UNIQUE,
+    caliber TEXT
+);
+
+-- Munition  
+CREATE TABLE ammunition (
+    id INTEGER PRIMARY KEY,
+    ammunition TEXT UNIQUE,
+    caliber TEXT
+);
+
+-- Entfernungen
+CREATE TABLE distances (
+    id INTEGER PRIMARY KEY,
+    distance REAL,
+    unit TEXT
+);
+
+-- Ergebnisse
+CREATE TABLE results (
+    id INTEGER PRIMARY KEY,
+    weapon_id INTEGER,
+    ammunition_id INTEGER,
+    distance_id INTEGER,
+    result INTEGER,
+    FOREIGN KEY (weapon_id) REFERENCES weapons (id),
+    FOREIGN KEY (ammunition_id) REFERENCES ammunition (id),
+    FOREIGN KEY (distance_id) REFERENCES distances (id)
+);
+```
+
+## 🔒 Sicherheit
+
+- Lokale SQLite-Datenbank (keine Netzwerk-Kommunikation)
+- Keine persönlichen Daten werden übertragen
+- Eingabevalidierung für alle Benutzereingaben
+- Sichere Datei-Operationen
 
 ## 📄 Lizenz
 
-Dieses Projekt steht unter der [MIT-Lizenz](LICENSE).
+Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe [LICENSE](LICENSE) für Details.
 
-## 🎯 Zielgruppe
+## ⚠️ Disclaimer
 
-- **Präzisionsschützen**: Sportschießen, Jagd
-- **Langstrecken-Schützen**: Wettkampf, Training
-- **Militär & Polizei**: Taktische Anwendungen
-- **Schießtrainer**: Ausbildung und Lehre
+Dieser Rechner dient ausschließlich Bildungs- und Freizeitzwecken. Überprüfen Sie alle Berechnungen und befolgen Sie stets die ordnungsgemäßen Waffensicherheitsverfahren. Der Autor übernimmt keine Verantwortung für die Missbrauch dieser Software.
+
+## 📞 Support
+
+- 🐛 **Bug Reports**: Öffne ein Issue auf GitHub
+- 💡 **Feature Requests**: Diskussion in GitHub Issues
+- 📧 **Direkte Fragen**: Kontaktiere über GitHub
+
+## 🏆 Danksagungen
+
+- Python Community für die exzellenten Standard-Bibliotheken
+- PyInstaller Team für Cross-Platform Executable Support
+- Alle Beta-Tester und Contributor
 
 ---
 
-**Entwickelt mit ❤️ für Präzisionsschützen**
-
-[![Made with Python](https://img.shields.io/badge/made%20with-Python-1f425f.svg)](https://python.org)
-[![Cross Platform](https://img.shields.io/badge/cross-platform-success.svg)]()
-[![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-ready-success.svg)]()
-
-### 📞 Support & Kontakt
-
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/username/riflescope-clicks-calculator/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/username/riflescope-clicks-calculator/discussions)
-- 📖 **Dokumentation**: [Wiki](https://github.com/username/riflescope-clicks-calculator/wiki)
-
-### 🔄 Releases
-
-| Version | Datum | Highlights |
-|---------|-------|------------|
-| v1.0.0 | 2024 | ✨ Erste stabile Version |
-| | | 🌍 Cross-Platform Support |
-| | | 🍎 Apple Silicon Support |
-| | | 🔨 Universal Build System |
+**🎯 Präzises Schießen beginnt mit präzisen Berechnungen!**
