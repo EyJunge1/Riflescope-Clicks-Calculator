@@ -208,6 +208,7 @@ Riflescope-Clicks-Calculator/
 ├── icons/                        # Anwendungs-Icons
 ├── database/                     # Datenbank-Dateien
 ├── run.py                        # Start-Script
+├── LICENSE                       # MIT Lizenz
 └── requirements.txt              # Python Dependencies
 ```
 
@@ -295,7 +296,7 @@ CREATE TABLE results (
 
 ## 📄 Lizenz
 
-Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe [LICENSE](LICENSE) für Details.
+Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe die [LICENSE](LICENSE) Datei für Details.
 
 ## ⚠️ Disclaimer
 
