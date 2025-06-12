@@ -1,0 +1,16 @@
+# Core dependencies - Standard Python libraries (no external dependencies needed)
+# All required modules are part of Python standard library:
+# - tkinter (GUI framework)
+# - sqlite3 (database)
+# - logging (logging system)
+# - os, sys (system operations)
+# - typing (type hints)
+
+# Development dependencies (optional)
+# pytest>=6.0.0  # For advanced testing
+# black>=21.0.0   # Code formatting
+# flake8>=3.8.0   # Code linting
+# mypy>=0.800     # Type checking
+
+# Note: This application is designed to work with Python 3.7+ standard library only
+# No external dependencies required for core functionality
