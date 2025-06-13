@@ -364,6 +364,54 @@ class PlatformBuildSelector:
         filtered = [arg for arg in args if arg in supported_args]
         
         return filtered
+    
+    def run_all_platforms(self, additional_args=None):
+        """Run builds for all platforms"""
+        if additional_args is None:
+            additional_args = []
+        
+        platforms = ['windows', 'macos', 'linux']
+        results = {}
+        
+        print("\n🌍 Starting builds for all platforms...")
+        print("=" * 50)
+        
+        for platform in platforms:
+            print(f"\n🔄 Building for {self.get_platform_display_name(platform)}...")
+            results[platform] = self.run_platform_build(platform, additional_args)
+        
+        # Show summary
+        print("\n📊 BUILD SUMMARY")
+        print("=" * 30)
+        success_count = 0
+        for platform, success in results.items():
+            status = "✅ SUCCESS" if success else "❌ FAILED"
+            print(f"{self.get_platform_display_name(platform):<15} {status}")
+            if success:
+                success_count += 1
+        
+        print(f"\n🎯 {success_count}/{len(platforms)} builds successful")
+        
+        # Return True if all builds successful
+        return all(results.values())
+    
+    def run_recommended_build(self):
+        """Run recommended build for current platform"""
+        print(f"\n🎯 Running recommended build for {self.get_platform_display_name(self.current_platform)}...")
+        
+        # Recommended arguments for each platform
+        recommended_args = {
+            'windows': ['--portable', '--installer'],
+            'darwin': ['--portable', '--dmg'],
+            'linux': ['--portable', '--appimage']
+        }
+        
+        args = recommended_args.get(self.current_platform, ['--portable'])
+        
+        if self.current_platform == 'darwin':
+            return self.run_platform_build('macos', args)
+        else:
+            return self.run_platform_build(self.current_platform, args)
 
 def main():
     """Hauptfunktion für Platform Build Selection"""
