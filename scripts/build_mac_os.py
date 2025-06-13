@@ -320,11 +320,113 @@ app = BUNDLE(
             print(f"❌ macOS Build-Fehler: {e}")
             return False
     
-    def create_macos_portable(self):
-        """Erstellt macOS Portable .tar.gz"""
-        print("📦 Erstelle macOS Portable Paket...")
+    def create_macos_dmg(self):
+        """Erstellt macOS DMG Image"""
+        print("📦 Erstelle macOS DMG...")
         
-        return super().create_portable_package()
+        app_name = f"{self.config.APP_DISPLAY_NAME}.app"
+        app_path = self.project_root / self.config.DIST_DIR / app_name
+        dmg_path = self.project_root / self.config.DIST_DIR / f"{self.config.APP_NAME}-macos.dmg"
+        
+        if not app_path.exists():
+            print("❌ App Bundle nicht gefunden")
+            return False
+        
+        try:
+            # Temporäres DMG-Verzeichnis
+            dmg_temp_dir = self.project_root / self.config.BUILD_DIR / "dmg_temp"
+            dmg_temp_dir.mkdir(exist_ok=True)
+            
+            # App kopieren
+            import shutil
+            temp_app_path = dmg_temp_dir / app_name
+            if temp_app_path.exists():
+                shutil.rmtree(temp_app_path)
+            shutil.copytree(app_path, temp_app_path)
+            
+            # Applications-Link erstellen
+            applications_link = dmg_temp_dir / "Applications"
+            if applications_link.exists():
+                applications_link.unlink()
+            applications_link.symlink_to("/Applications")
+            
+            # README erstellen
+            readme_content = f"""{self.config.APP_DISPLAY_NAME}
+
+Ziehe die App in den Applications-Ordner um sie zu installieren.
+
+Version: {self.config.APP_VERSION}
+Universal Binary für Intel & Apple Silicon
+
+Website: https://github.com/yourusername/Riflescope-Clicks-Calculator
+"""
+            
+            readme_file = dmg_temp_dir / "README.txt"
+            with open(readme_file, 'w', encoding='utf-8') as f:
+                f.write(readme_content)
+            
+            # DMG erstellen
+            cmd = [
+                'hdiutil', 'create', '-volname', self.config.APP_DISPLAY_NAME,
+                '-srcfolder', str(dmg_temp_dir),
+                '-ov', '-format', 'UDZO',
+                str(dmg_path)
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                print(f"✅ DMG erstellt: {dmg_path}")
+                
+                # Cleanup
+                shutil.rmtree(dmg_temp_dir)
+                return True
+            else:
+                print(f"❌ DMG-Erstellung fehlgeschlagen: {result.stderr}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ DMG-Fehler: {e}")
+            return False
+    
+    def create_macos_portable_targz(self):
+        """Erstellt macOS Portable .tar.gz"""
+        print("📦 Erstelle macOS Portable .tar.gz...")
+        
+        import tarfile
+        
+        app_name = f"{self.config.APP_DISPLAY_NAME}.app"
+        app_path = self.project_root / self.config.DIST_DIR / app_name
+        targz_path = self.project_root / self.config.DIST_DIR / f"{self.config.APP_NAME}-macos-portable.tar.gz"
+        
+        if not app_path.exists():
+            print("❌ App Bundle nicht gefunden")
+            return False
+        
+        try:
+            with tarfile.open(targz_path, 'w:gz') as tar:
+                tar.add(app_path, arcname=app_name)
+                
+                # README hinzufügen
+                readme_content = f"""{self.config.APP_DISPLAY_NAME} - Portable Version
+
+Entpacke das Archiv und führe die .app aus.
+
+Version: {self.config.APP_VERSION}
+"""
+                
+                import io
+                readme_info = tarfile.TarInfo('README.txt')
+                readme_data = readme_content.encode('utf-8')
+                readme_info.size = len(readme_data)
+                tar.addfile(readme_info, io.BytesIO(readme_data))
+            
+            print(f"✅ Portable .tar.gz erstellt: {targz_path}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ .tar.gz-Erstellung fehlgeschlagen: {e}")
+            return False
 
 def main():
     """macOS Build Hauptfunktion"""
@@ -333,7 +435,9 @@ def main():
     parser.add_argument('--clean', action='store_true', help='Bereinige vor Build')
     parser.add_argument('--test', action='store_true', help='Führe Tests durch')
     parser.add_argument('--portable', action='store_true', help='Erstelle Portable .tar.gz')
+    parser.add_argument('--dmg', action='store_true', help='Erstelle DMG')
     parser.add_argument('--universal', action='store_true', help='Universal Binary (Intel + Apple Silicon)')
+    parser.add_argument('--quick', action='store_true', help='Nur App Bundle (schnell)')
     parser.add_argument('--keep-files', action='store_true', help='Behalte Build-Dateien')
     parser.add_argument('--no-verify', action='store_true', help='Überspringe Verifikation')
     
@@ -363,9 +467,13 @@ def main():
         if not args.no_verify and not builder.verify_executable():
             print("⚠️ Verifikation fehlgeschlagen")
         
-        # 6. Portable Paket
-        if args.portable and not builder.create_macos_portable():
-            print("⚠️ Portable-Paket fehlgeschlagen")
+        # 6. Zusätzliche Pakete (nur wenn nicht quick)
+        if not args.quick:
+            if args.dmg and not builder.create_macos_dmg():
+                print("⚠️ DMG-Erstellung fehlgeschlagen")
+            
+            if args.portable and not builder.create_macos_portable_targz():
+                print("⚠️ Portable-Paket fehlgeschlagen")
         
         # 7. Build-Report
         builder.create_build_report()
@@ -376,6 +484,21 @@ def main():
         
         print("\n🎉 macOS Build erfolgreich abgeschlossen!")
         
+        # Zeige erstellte Dateien
+        dist_dir = builder.project_root / builder.config.DIST_DIR
+        created_files = []
+        for pattern in ["*.app", "*.dmg", "*.tar.gz"]:
+            created_files.extend(dist_dir.glob(pattern))
+        
+        if created_files:
+            print(f"\n📦 Erstellte Dateien:")
+            for file_path in created_files:
+                if file_path.is_dir():
+                    print(f"   {file_path.name} (App Bundle)")
+                else:
+                    file_size = file_path.stat().st_size // (1024 * 1024)
+                    print(f"   {file_path.name} ({file_size} MB)")
+        
         # macOS-spezifische Hinweise
         app_name = f"{builder.config.APP_DISPLAY_NAME}.app"
         print(f"\n📋 macOS Nächste Schritte:")
@@ -383,6 +506,8 @@ def main():
         print(f"2. Optional: codesign für Distribution")
         if args.universal:
             print(f"3. Universal Binary erstellt (Intel + Apple Silicon)")
+        if args.dmg:
+            print(f"4. DMG bereit für Distribution")
         
         return 0
         

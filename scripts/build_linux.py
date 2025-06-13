@@ -354,6 +354,278 @@ exec "${{HERE}}/usr/bin/{self.config.APP_NAME}" "$@"
         print("📦 Erstelle Linux Portable Paket...")
         
         return super().create_portable_package()
+    
+    def create_appimage(self):
+        """Erstellt AppImage"""
+        print("📦 Erstelle AppImage...")
+        
+        # AppDir-Struktur erstellen
+        appdir = self.create_appimage_structure()
+        if not appdir:
+            return False
+        
+        # AppImage Tool herunterladen/verwenden
+        appimage_tool = self.get_appimagetool()
+        if not appimage_tool:
+            print("⚠️ AppImageTool nicht verfügbar")
+            return False
+        
+        appimage_path = self.project_root / self.config.DIST_DIR / f"{self.config.APP_NAME}-linux-{self.linux_info['architecture']}.AppImage"
+        
+        try:
+            cmd = [str(appimage_tool), str(appdir), str(appimage_path)]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                # Ausführbar machen
+                os.chmod(appimage_path, 0o755)
+                print(f"✅ AppImage erstellt: {appimage_path}")
+                return True
+            else:
+                print(f"❌ AppImage-Erstellung fehlgeschlagen: {result.stderr}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ AppImage-Fehler: {e}")
+            return False
+    
+    def get_appimagetool(self):
+        """Lädt AppImageTool herunter oder findet es"""
+        tool_path = self.project_root / self.config.BUILD_DIR / "appimagetool"
+        
+        if tool_path.exists():
+            return tool_path
+        
+        # Versuche von System zu finden
+        try:
+            result = subprocess.run(['which', 'appimagetool'], capture_output=True, text=True)
+            if result.returncode == 0:
+                return result.stdout.strip()
+        except:
+            pass
+        
+        # Download AppImageTool
+        print("📥 Lade AppImageTool herunter...")
+        try:
+            import urllib.request
+            
+            url = "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+            urllib.request.urlretrieve(url, tool_path)
+            os.chmod(tool_path, 0o755)
+            
+            print("✓ AppImageTool heruntergeladen")
+            return tool_path
+            
+        except Exception as e:
+            print(f"❌ Download fehlgeschlagen: {e}")
+            return None
+    
+    def create_deb_package(self):
+        """Erstellt .deb Paket"""
+        print("📦 Erstelle .deb Paket...")
+        
+        # DEBIAN-Struktur erstellen
+        deb_dir = self.project_root / self.config.BUILD_DIR / "deb_package"
+        debian_dir = deb_dir / "DEBIAN"
+        usr_bin = deb_dir / "usr" / "bin"
+        usr_share_apps = deb_dir / "usr" / "share" / "applications"
+        usr_share_icons = deb_dir / "usr" / "share" / "icons" / "hicolor" / "256x256" / "apps"
+        
+        for dir_path in [debian_dir, usr_bin, usr_share_apps, usr_share_icons]:
+            dir_path.mkdir(parents=True, exist_ok=True)
+        
+        # Binary kopieren
+        binary_src = self.project_root / self.config.DIST_DIR / self.config.APP_NAME
+        binary_dst = usr_bin / self.config.APP_NAME
+        
+        if binary_src.exists():
+            shutil.copy2(binary_src, binary_dst)
+            os.chmod(binary_dst, 0o755)
+        else:
+            print("❌ Binary nicht gefunden")
+            return False
+        
+        # Control-Datei
+        control_content = f"""Package: {self.config.APP_NAME}
+Version: {self.config.APP_VERSION}
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: {self.config.APP_AUTHOR} <noreply@example.com>
+Description: {self.config.APP_DESCRIPTION}
+ Professional Riflescope Click Calculator for precise shooting.
+ Supports multiple calibers and distance calculations.
+"""
+        
+        with open(debian_dir / "control", 'w') as f:
+            f.write(control_content)
+        
+        # Desktop-Datei
+        desktop_content = f"""[Desktop Entry]
+Type=Application
+Name={self.config.APP_DISPLAY_NAME}
+Comment={self.config.APP_DESCRIPTION}
+Exec={self.config.APP_NAME}
+Icon={self.config.APP_NAME}
+Categories=Utility;Sports;
+Terminal=false
+"""
+        
+        with open(usr_share_apps / f"{self.config.APP_NAME}.desktop", 'w') as f:
+            f.write(desktop_content)
+        
+        # Icon kopieren
+        icon_src = self.get_platform_icon()
+        if icon_src and Path(icon_src).exists():
+            shutil.copy2(icon_src, usr_share_icons / f"{self.config.APP_NAME}.png")
+        
+        # .deb bauen
+        deb_file = self.project_root / self.config.DIST_DIR / f"{self.config.APP_NAME}_{self.config.APP_VERSION}_amd64.deb"
+        
+        try:
+            cmd = ['dpkg-deb', '--build', str(deb_dir), str(deb_file)]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                print(f"✅ .deb Paket erstellt: {deb_file}")
+                return True
+            else:
+                print(f"❌ .deb-Erstellung fehlgeschlagen: {result.stderr}")
+                return False
+                
+        except FileNotFoundError:
+            print("⚠️ dpkg-deb nicht verfügbar, überspringe .deb-Erstellung")
+            return False
+        except Exception as e:
+            print(f"❌ .deb-Fehler: {e}")
+            return False
+    
+    def create_rpm_package(self):
+        """Erstellt .rpm Paket"""
+        print("📦 Erstelle .rpm Paket...")
+        
+        # RPM SPEC-Datei erstellen
+        spec_content = f"""%define _topdir {self.project_root / self.config.BUILD_DIR / "rpm"}
+%define _builddir %{{_topdir}}/BUILD
+%define _sourcedir %{{_topdir}}/SOURCES
+%define _rpmdir %{{_topdir}}/RPMS
+%define _srcrpmdir %{{_topdir}}/SRPMS
+
+Name: {self.config.APP_NAME}
+Version: {self.config.APP_VERSION}
+Release: 1
+Summary: {self.config.APP_DESCRIPTION}
+License: MIT
+Group: Applications/Engineering
+Source0: %{{name}}-%{{version}}.tar.gz
+
+%description
+{self.config.APP_DESCRIPTION}
+Professional Riflescope Click Calculator for precise shooting.
+
+%prep
+%setup -q
+
+%build
+# Nothing to build - binary already compiled
+
+%install
+rm -rf $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/usr/bin
+mkdir -p $RPM_BUILD_ROOT/usr/share/applications
+mkdir -p $RPM_BUILD_ROOT/usr/share/icons/hicolor/256x256/apps
+
+cp {self.config.APP_NAME} $RPM_BUILD_ROOT/usr/bin/
+cp {self.config.APP_NAME}.desktop $RPM_BUILD_ROOT/usr/share/applications/
+cp {self.config.APP_NAME}.png $RPM_BUILD_ROOT/usr/share/icons/hicolor/256x256/apps/
+
+%files
+/usr/bin/{self.config.APP_NAME}
+/usr/share/applications/{self.config.APP_NAME}.desktop
+/usr/share/icons/hicolor/256x256/apps/{self.config.APP_NAME}.png
+
+%changelog
+* Wed Dec 06 2024 {self.config.APP_AUTHOR} - {self.config.APP_VERSION}-1
+- Initial package
+"""
+        
+        # RPM-Verzeichnisstruktur
+        rpm_topdir = self.project_root / self.config.BUILD_DIR / "rpm"
+        for subdir in ["BUILD", "SOURCES", "RPMS", "SRPMS", "SPECS"]:
+            (rpm_topdir / subdir).mkdir(parents=True, exist_ok=True)
+        
+        spec_file = rpm_topdir / "SPECS" / f"{self.config.APP_NAME}.spec"
+        with open(spec_file, 'w') as f:
+            f.write(spec_content)
+        
+        # Source-Tarball erstellen
+        try:
+            self.create_rpm_source_tarball(rpm_topdir / "SOURCES")
+            
+            # RPM bauen
+            cmd = ['rpmbuild', '-ba', str(spec_file)]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                # RPM-Datei finden und kopieren
+                rpm_file = None
+                rpms_dir = rpm_topdir / "RPMS" / "x86_64"
+                for rpm in rpms_dir.glob("*.rpm"):
+                    rpm_file = rpm
+                    break
+                
+                if rpm_file:
+                    final_rpm = self.project_root / self.config.DIST_DIR / f"{self.config.APP_NAME}-{self.config.APP_VERSION}-1.x86_64.rpm"
+                    shutil.copy2(rpm_file, final_rpm)
+                    print(f"✅ .rpm Paket erstellt: {final_rpm}")
+                    return True
+                else:
+                    print("❌ RPM-Datei nicht gefunden")
+                    return False
+            else:
+                print(f"❌ .rpm-Erstellung fehlgeschlagen: {result.stderr}")
+                return False
+                
+        except FileNotFoundError:
+            print("⚠️ rpmbuild nicht verfügbar, überspringe .rpm-Erstellung")
+            return False
+        except Exception as e:
+            print(f"❌ .rpm-Fehler: {e}")
+            return False
+    
+    def create_rpm_source_tarball(self, sources_dir):
+        """Erstellt Source-Tarball für RPM"""
+        import tarfile
+        
+        tarball_path = sources_dir / f"{self.config.APP_NAME}-{self.config.APP_VERSION}.tar.gz"
+        
+        with tarfile.open(tarball_path, 'w:gz') as tar:
+            # Binary
+            binary_path = self.project_root / self.config.DIST_DIR / self.config.APP_NAME
+            if binary_path.exists():
+                tar.add(binary_path, arcname=f"{self.config.APP_NAME}-{self.config.APP_VERSION}/{self.config.APP_NAME}")
+            
+            # Desktop-Datei
+            desktop_content = f"""[Desktop Entry]
+Type=Application
+Name={self.config.APP_DISPLAY_NAME}
+Comment={self.config.APP_DESCRIPTION}
+Exec={self.config.APP_NAME}
+Icon={self.config.APP_NAME}
+Categories=Utility;Sports;
+Terminal=false
+"""
+            
+            import io
+            desktop_info = tarfile.TarInfo(f"{self.config.APP_NAME}-{self.config.APP_VERSION}/{self.config.APP_NAME}.desktop")
+            desktop_data = desktop_content.encode('utf-8')
+            desktop_info.size = len(desktop_data)
+            tar.addfile(desktop_info, io.BytesIO(desktop_data))
+            
+            # Icon
+            icon_src = self.get_platform_icon()
+            if icon_src and Path(icon_src).exists():
+                tar.add(icon_src, arcname=f"{self.config.APP_NAME}-{self.config.APP_VERSION}/{self.config.APP_NAME}.png")
 
 def main():
     """Linux Build Hauptfunktion"""
@@ -362,7 +634,10 @@ def main():
     parser.add_argument('--clean', action='store_true', help='Bereinige vor Build')
     parser.add_argument('--test', action='store_true', help='Führe Tests durch')
     parser.add_argument('--portable', action='store_true', help='Erstelle Portable .tar.gz')
-    parser.add_argument('--appimage', action='store_true', help='AppImage-ready Build')
+    parser.add_argument('--appimage', action='store_true', help='Erstelle AppImage')
+    parser.add_argument('--deb', action='store_true', help='Erstelle .deb Paket')
+    parser.add_argument('--rpm', action='store_true', help='Erstelle .rpm Paket')
+    parser.add_argument('--quick', action='store_true', help='Nur Binary (schnell)')
     parser.add_argument('--keep-files', action='store_true', help='Behalte Build-Dateien')
     parser.add_argument('--no-verify', action='store_true', help='Überspringe Verifikation')
     
@@ -388,35 +663,56 @@ def main():
         if not builder.build_linux_binary(appimage=args.appimage):
             return 1
         
-        # 5. AppImage-Struktur (optional)
-        if args.appimage:
-            builder.create_appimage_structure()
-        
-        # 6. Verifikation
+        # 5. Verifikation
         if not args.no_verify and not builder.verify_executable():
             print("⚠️ Verifikation fehlgeschlagen")
         
-        # 7. Portable Paket
-        if args.portable and not builder.create_linux_portable():
-            print("⚠️ Portable-Paket fehlgeschlagen")
+        # 6. Zusätzliche Pakete (nur wenn nicht quick)
+        if not args.quick:
+            if args.appimage and not builder.create_appimage():
+                print("⚠️ AppImage-Erstellung fehlgeschlagen")
+            
+            if args.deb and not builder.create_deb_package():
+                print("⚠️ .deb-Erstellung fehlgeschlagen")
+            
+            if args.rpm and not builder.create_rpm_package():
+                print("⚠️ .rpm-Erstellung fehlgeschlagen")
+            
+            if args.portable and not builder.create_linux_portable():
+                print("⚠️ Portable-Paket fehlgeschlagen")
         
-        # 8. Build-Report
+        # 7. Build-Report
         builder.create_build_report()
         
-        # 9. Cleanup
+        # 8. Cleanup
         if not args.keep_files:
             builder.cleanup_build_files()
         
         print("\n🎉 Linux Build erfolgreich abgeschlossen!")
+        
+        # Zeige erstellte Dateien
+        dist_dir = builder.project_root / builder.config.DIST_DIR
+        created_files = []
+        for pattern in [builder.config.APP_NAME, "*.AppImage", "*.deb", "*.rpm", "*.tar.gz"]:
+            created_files.extend(dist_dir.glob(pattern))
+        
+        if created_files:
+            print(f"\n📦 Erstellte Dateien:")
+            for file_path in created_files:
+                if file_path.is_file():
+                    file_size = file_path.stat().st_size // (1024 * 1024)
+                    print(f"   {file_path.name} ({file_size} MB)")
         
         # Linux-spezifische Hinweise
         binary_name = builder.config.APP_NAME
         print(f"\n📋 Linux Nächste Schritte:")
         print(f"1. Teste: ./dist/{binary_name}")
         if args.appimage:
-            print(f"2. AppImage-Struktur verfügbar in build/AppDir")
-            print(f"3. Erstelle AppImage mit appimagetool")
-        print(f"4. Optional: Erstelle .deb/.rpm Pakete")
+            print(f"2. AppImage bereit für Distribution")
+        if args.deb:
+            print(f"3. .deb Paket für Debian/Ubuntu bereit")
+        if args.rpm:
+            print(f"4. .rpm Paket für Fedora/RHEL bereit")
         
         return 0
         

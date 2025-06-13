@@ -6,9 +6,9 @@ Cross-Platform Build Script Selector für alle Betriebssysteme
 Wähle dein Ziel-Betriebssystem oder baue für alle Plattformen
 
 🚀 UNTERSTÜTZTE PLATTFORMEN:
-- 🪟 Windows (32/64-bit) → .exe + Setup.exe
-- 🍎 macOS (Intel + Apple Silicon) → .app Bundle  
-- 🐧 Linux (x86_64/ARM) → Native Binary
+- 🪟 Windows (32/64-bit) → .exe + Setup.exe + Portable.zip
+- 🍎 macOS (Intel + Apple Silicon) → .app Bundle + .dmg
+- 🐧 Linux (x86_64/ARM) → Native Binary + AppImage + .deb + .rpm
 
 📋 VERWENDUNG:
     python scripts/build.py                 # Interaktive Auswahl
@@ -16,6 +16,7 @@ Wähle dein Ziel-Betriebssystem oder baue für alle Plattformen
     python scripts/build.py --macos         # Nur macOS
     python scripts/build.py --linux         # Nur Linux
     python scripts/build.py --all           # Alle Plattformen
+    python scripts/build.py --packages      # Mit allen Paketen
 
 ⭐ AUTOMATISCHE PLATTFORM-ERKENNUNG UND OPTIMIERUNG!
 """
@@ -132,7 +133,32 @@ class CrossPlatformBuildManager:
     def create_installer_script(self):
         """Create installer script"""
         print("📦 Erstelle Installer...")
-        # Placeholder for installer creation
+        
+        if self.platform_info['is_windows']:
+            return self.create_windows_msi_installer()
+        elif self.platform_info['is_macos']:
+            return self.create_macos_dmg()
+        elif self.platform_info['is_linux']:
+            return self.create_linux_packages()
+        
+        return True
+    
+    def create_windows_msi_installer(self):
+        """Create Windows MSI installer"""
+        print("📦 Erstelle Windows MSI Installer...")
+        # Implementation will be in build_windows.py
+        return True
+    
+    def create_macos_dmg(self):
+        """Create macOS DMG"""
+        print("📦 Erstelle macOS DMG...")
+        # Implementation will be in build_mac_os.py
+        return True
+    
+    def create_linux_packages(self):
+        """Create Linux packages (AppImage, deb, rpm)"""
+        print("📦 Erstelle Linux Pakete...")
+        # Implementation will be in build_linux.py
         return True
     
     def create_version_file(self):
@@ -241,15 +267,16 @@ class PlatformBuildSelector:
         """Zeigt interaktives Platform-Auswahl-Menü"""
         print("\n🔧 Wähle Build-Ziel:")
         print("=" * 30)
-        print("1. 🪟 Windows Build (.exe + Installer)")
-        print("2. 🍎 macOS Build (.app Bundle)")
-        print("3. 🐧 Linux Build (Native Binary)")
-        print("4. 🌍 Alle Plattformen")
-        print("5. ❌ Abbrechen")
+        print("1. 🪟 Windows Build (.exe + MSI + Portable)")
+        print("2. 🍎 macOS Build (.app + DMG)")
+        print("3. 🐧 Linux Build (Binary + AppImage + deb/rpm)")
+        print("4. 🌍 Alle Plattformen (mit allen Paketen)")
+        print("5. 🎯 Quick Build (nur Executables)")
+        print("6. ❌ Abbrechen")
         
         while True:
             try:
-                choice = input("\nWähle eine Option (1-5): ").strip()
+                choice = input("\nWähle eine Option (1-6): ").strip()
                 
                 if choice == '1':
                     return 'windows'
@@ -260,10 +287,12 @@ class PlatformBuildSelector:
                 elif choice == '4':
                     return 'all'
                 elif choice == '5':
+                    return 'quick'
+                elif choice == '6':
                     print("Build abgebrochen.")
                     return None
                 else:
-                    print("❌ Ungültige Auswahl. Bitte 1-5 eingeben.")
+                    print("❌ Ungültige Auswahl. Bitte 1-6 eingeben.")
                     
             except (KeyboardInterrupt, EOFError):
                 print("\n\nBuild abgebrochen.")
@@ -377,12 +406,14 @@ Build-Optionen (an Platform-Scripts weitergegeben):
   --test            Führe Tests durch
   --portable        Erstelle portable Pakete
   --installer       Erstelle Installer
+  --packages        Erstelle alle Paket-Formate
+  --quick           Nur Executables (schnell)
 
 Beispiele:
   python scripts/build.py                           # Interaktive Auswahl
-  python scripts/build.py --windows --clean         # Windows mit Bereinigung
-  python scripts/build.py --all --portable          # Alle Plattformen + Portable
-  python scripts/build.py --recommended             # Für aktuelles System
+  python scripts/build.py --windows --packages      # Windows mit allen Paketen
+  python scripts/build.py --all --packages          # Alle Plattformen + Pakete
+  python scripts/build.py --quick --all             # Schneller Build alle Plattformen
         """
     )
     
@@ -407,6 +438,10 @@ Beispiele:
                        help='Erstelle portable Pakete')
     parser.add_argument('--installer', action='store_true',
                        help='Erstelle Installer')
+    parser.add_argument('--packages', action='store_true',
+                       help='Erstelle alle Paket-Formate')
+    parser.add_argument('--quick', action='store_true',
+                       help='Nur Executables (schneller Build)')
     parser.add_argument('--keep-files', action='store_true',
                        help='Behalte Build-Dateien')
     parser.add_argument('--no-verify', action='store_true',
@@ -430,6 +465,10 @@ Beispiele:
         additional_args.append('--portable')
     if args.installer:
         additional_args.append('--installer')
+    if args.packages:
+        additional_args.extend(['--portable', '--installer', '--msi', '--dmg', '--appimage', '--deb', '--rpm'])
+    if args.quick:
+        additional_args.append('--quick')
     if args.keep_files:
         additional_args.append('--keep-files')
     if args.no_verify:
@@ -463,9 +502,24 @@ Beispiele:
             if choice is None:
                 return 1
             elif choice == 'all':
-                return 0 if selector.run_all_platforms(additional_args) else 1
+                # Alle Plattformen mit Paketen
+                packages_args = additional_args + ['--portable', '--installer', '--msi', '--dmg', '--appimage', '--deb', '--rpm']
+                return 0 if selector.run_all_platforms(packages_args) else 1
+            elif choice == 'quick':
+                # Schneller Build für alle Plattformen
+                quick_args = additional_args + ['--quick']
+                return 0 if selector.run_all_platforms(quick_args) else 1
             else:
-                return 0 if selector.run_platform_build(choice, additional_args) else 1
+                # Einzelne Plattform mit Paketen
+                platform_args = additional_args + ['--portable', '--installer']
+                if choice == 'windows':
+                    platform_args.append('--msi')
+                elif choice == 'macos':
+                    platform_args.append('--dmg')
+                elif choice == 'linux':
+                    platform_args.extend(['--appimage', '--deb', '--rpm'])
+                
+                return 0 if selector.run_platform_build(choice, platform_args) else 1
     
     except KeyboardInterrupt:
         print("\n\nBuild abgebrochen.")

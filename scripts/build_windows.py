@@ -235,11 +235,159 @@ exe = EXE(
         # NSIS Script erstellen (von parent class)
         return super().create_installer_script()
     
-    def create_windows_portable(self):
-        """Erstellt Windows Portable ZIP"""
-        print("📦 Erstelle Windows Portable Paket...")
+    def create_windows_msi_installer(self):
+        """Erstellt Windows MSI Installer mit WiX Toolset"""
+        print("📦 Erstelle Windows MSI Installer...")
         
-        return super().create_portable_package()
+        # Prüfe WiX Toolset
+        try:
+            subprocess.run(['candle', '-?'], capture_output=True, check=True)
+            print("✓ WiX Toolset verfügbar")
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("⚠️ WiX Toolset nicht gefunden, erstelle NSIS Installer stattdessen...")
+            return self.create_nsis_installer()
+        
+        # WiX Source erstellen
+        wxs_content = self.create_wix_source()
+        wxs_file = self.project_root / self.config.BUILD_DIR / f"{self.config.APP_NAME}.wxs"
+        
+        with open(wxs_file, 'w', encoding='utf-8') as f:
+            f.write(wxs_content)
+        
+        try:
+            # Compile WiX
+            wixobj_file = wxs_file.with_suffix('.wixobj')
+            subprocess.run([
+                'candle', '-out', str(wixobj_file), str(wxs_file)
+            ], check=True, cwd=self.project_root)
+            
+            # Link MSI
+            msi_file = self.project_root / self.config.DIST_DIR / f"{self.config.APP_NAME}-setup-x64.msi"
+            subprocess.run([
+                'light', '-out', str(msi_file), str(wixobj_file)
+            ], check=True, cwd=self.project_root)
+            
+            print(f"✅ MSI Installer erstellt: {msi_file}")
+            return True
+            
+        except subprocess.CalledProcessError as e:
+            print(f"❌ MSI-Erstellung fehlgeschlagen: {e}")
+            return False
+    
+    def create_wix_source(self):
+        """Erstellt WiX XML Source für MSI"""
+        return f'''<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="{self.config.APP_DISPLAY_NAME}" Language="1033" 
+           Version="{self.config.APP_VERSION}" Manufacturer="{self.config.APP_AUTHOR}" 
+           UpgradeCode="{{12345678-1234-1234-1234-123456789012}}">
+    
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    
+    <MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
+    <MediaTemplate />
+    
+    <Feature Id="ProductFeature" Title="{self.config.APP_DISPLAY_NAME}" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="{self.config.APP_DISPLAY_NAME}" />
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="MainExecutable">
+        <File Id="MainExe" Source="dist\\{self.config.APP_NAME}.exe" KeyPath="yes"/>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>'''
+    
+    def create_nsis_installer(self):
+        """Erstellt NSIS Installer als Fallback"""
+        print("📦 Erstelle NSIS Installer...")
+        
+        nsis_script = self.create_nsis_script()
+        nsis_file = self.project_root / self.config.BUILD_DIR / f"{self.config.APP_NAME}_installer.nsi"
+        
+        with open(nsis_file, 'w', encoding='utf-8') as f:
+            f.write(nsis_script)
+        
+        try:
+            subprocess.run(['makensis', str(nsis_file)], check=True, cwd=self.project_root)
+            print("✅ NSIS Installer erstellt")
+            return True
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("⚠️ NSIS nicht verfügbar, überspringe Installer")
+            return False
+    
+    def create_nsis_script(self):
+        """Erstellt NSIS Script"""
+        return f'''!define APP_NAME "{self.config.APP_DISPLAY_NAME}"
+!define APP_VERSION "{self.config.APP_VERSION}"
+!define APP_PUBLISHER "{self.config.APP_AUTHOR}"
+!define APP_EXE "{self.config.APP_NAME}.exe"
+
+Name "${{APP_NAME}}"
+OutFile "dist\\${{APP_NAME}}-setup-x64.exe"
+InstallDir "$PROGRAMFILES64\\${{APP_NAME}}"
+
+Section "MainSection" SEC01
+  SetOutPath "$INSTDIR"
+  File "dist\\${{APP_EXE}}"
+  
+  CreateDirectory "$SMPROGRAMS\\${{APP_NAME}}"
+  CreateShortCut "$SMPROGRAMS\\${{APP_NAME}}\\${{APP_NAME}}.lnk" "$INSTDIR\\${{APP_EXE}}"
+  CreateShortCut "$DESKTOP\\${{APP_NAME}}.lnk" "$INSTDIR\\${{APP_EXE}}"
+SectionEnd
+
+Section "Uninstall"
+  Delete "$INSTDIR\\${{APP_EXE}}"
+  Delete "$SMPROGRAMS\\${{APP_NAME}}\\${{APP_NAME}}.lnk"
+  Delete "$DESKTOP\\${{APP_NAME}}.lnk"
+  RMDir "$SMPROGRAMS\\${{APP_NAME}}"
+  RMDir "$INSTDIR"
+SectionEnd'''
+    
+    def create_windows_portable_zip(self):
+        """Erstellt Windows Portable ZIP"""
+        print("📦 Erstelle Windows Portable ZIP...")
+        
+        import zipfile
+        
+        exe_path = self.project_root / self.config.DIST_DIR / f"{self.config.APP_NAME}.exe"
+        zip_path = self.project_root / self.config.DIST_DIR / f"{self.config.APP_NAME}-portable-x64.zip"
+        
+        if not exe_path.exists():
+            print("❌ Executable nicht gefunden")
+            return False
+        
+        try:
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                zipf.write(exe_path, f"{self.config.APP_NAME}.exe")
+                
+                # README für Portable
+                readme_content = f"""{self.config.APP_DISPLAY_NAME} - Portable Version
+
+Einfach die .exe ausführen - keine Installation nötig!
+
+Version: {self.config.APP_VERSION}
+Website: https://github.com/yourusername/Riflescope-Clicks-Calculator
+"""
+                zipf.writestr("README.txt", readme_content)
+            
+            print(f"✅ Portable ZIP erstellt: {zip_path}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ ZIP-Erstellung fehlgeschlagen: {e}")
+            return False
 
 def main():
     """Windows Build Hauptfunktion"""
@@ -249,6 +397,8 @@ def main():
     parser.add_argument('--test', action='store_true', help='Führe Tests durch')
     parser.add_argument('--portable', action='store_true', help='Erstelle Portable ZIP')
     parser.add_argument('--installer', action='store_true', help='Erstelle NSIS Installer')
+    parser.add_argument('--msi', action='store_true', help='Erstelle MSI Installer')
+    parser.add_argument('--quick', action='store_true', help='Nur Executable (schnell)')
     parser.add_argument('--keep-files', action='store_true', help='Behalte Build-Dateien')
     parser.add_argument('--no-verify', action='store_true', help='Überspringe Verifikation')
     
@@ -278,12 +428,16 @@ def main():
         if not args.no_verify and not builder.verify_executable():
             print("⚠️ Verifikation fehlgeschlagen")
         
-        # 6. Zusätzliche Pakete
-        if args.portable and not builder.create_windows_portable():
-            print("⚠️ Portable-Paket fehlgeschlagen")
-        
-        if args.installer and not builder.create_windows_installer():
-            print("⚠️ Installer fehlgeschlagen")
+        # 6. Zusätzliche Pakete (nur wenn nicht quick)
+        if not args.quick:
+            if args.portable and not builder.create_windows_portable_zip():
+                print("⚠️ Portable-ZIP fehlgeschlagen")
+            
+            if args.msi and not builder.create_windows_msi_installer():
+                print("⚠️ MSI-Installer fehlgeschlagen")
+            
+            if args.installer and not builder.create_nsis_installer():
+                print("⚠️ NSIS-Installer fehlgeschlagen")
         
         # 7. Build-Report
         builder.create_build_report()
@@ -293,6 +447,19 @@ def main():
             builder.cleanup_build_files()
         
         print("\n🎉 Windows Build erfolgreich abgeschlossen!")
+        
+        # Zeige erstellte Dateien
+        dist_dir = builder.project_root / builder.config.DIST_DIR
+        created_files = []
+        for pattern in ["*.exe", "*.msi", "*.zip"]:
+            created_files.extend(dist_dir.glob(pattern))
+        
+        if created_files:
+            print(f"\n📦 Erstellte Dateien:")
+            for file_path in created_files:
+                file_size = file_path.stat().st_size // (1024 * 1024)
+                print(f"   {file_path.name} ({file_size} MB)")
+        
         return 0
         
     except Exception as e:
