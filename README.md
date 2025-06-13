@@ -174,7 +174,6 @@ python scripts/build.py --linux --all                   # Alle Linux Pakete
 - 🚨 **Kritische Bugs**: [Security Issues](https://github.com/yourusername/Riflescope-Clicks-Calculator/security/advisories)
 - 🐛 **Bug Reports**: [GitHub Issues](https://github.com/yourusername/Riflescope-Clicks-Calculator/issues/new?template=bug_report.md)
 - 💡 **Feature Requests**: [GitHub Discussions](https://github.com/yourusername/Riflescope-Clicks-Calculator/discussions/new?category=ideas)
-- 📖 **Dokumentation**: [Wiki](https://github.com/yourusername/Riflescope-Clicks-Calculator/wiki)
 
 ## 📄 Lizenz
 
