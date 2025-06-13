@@ -322,8 +322,11 @@ class PlatformBuildSelector:
         print(f"\n🚀 Starte {self.get_platform_display_name(platform_name)} Build...")
         print("-" * 50)
         
+        # Filter platform-specific arguments
+        filtered_args = self.filter_platform_args(platform_name, additional_args)
+        
         # Führe plattform-spezifischen Build aus
-        cmd = [sys.executable, str(script_path)] + additional_args
+        cmd = [sys.executable, str(script_path)] + filtered_args
         
         try:
             result = subprocess.run(cmd, cwd=self.project_root)
@@ -339,52 +342,28 @@ class PlatformBuildSelector:
             print(f"❌ Fehler beim {platform_name} Build: {e}")
             return False
     
-    def run_all_platforms(self, additional_args=None):
-        """Führt Builds für alle Plattformen aus"""
-        platforms = ['windows', 'macos', 'linux']
-        results = {}
+    def filter_platform_args(self, platform_name, args):
+        """Filter arguments for specific platform"""
+        if not args:
+            return []
         
-        print("\n🌍 Starte Builds für alle Plattformen...")
-        print("=" * 45)
+        # Common arguments supported by all platforms
+        common_args = [
+            '--clean', '--test', '--quick', '--keep-files', '--no-verify', '--portable'
+        ]
         
-        for platform_name in platforms:
-            success = self.run_platform_build(platform_name, additional_args)
-            results[platform_name] = success
-        
-        # Zusammenfassung
-        print("\n📊 Build-Zusammenfassung:")
-        print("=" * 25)
-        
-        for platform_name, success in results.items():
-            status = "✅ Erfolgreich" if success else "❌ Fehlgeschlagen"
-            print(f"{self.get_platform_display_name(platform_name)}: {status}")
-        
-        successful = sum(results.values())
-        total = len(results)
-        
-        if successful == total:
-            print(f"\n🎉 Alle {total} Builds erfolgreich!")
-            return True
-        else:
-            print(f"\n⚠️ {successful}/{total} Builds erfolgreich")
-            return False
-    
-    def run_recommended_build(self):
-        """Führt empfohlenen Build für aktuelles System aus"""
-        platform_mapping = {
-            'windows': 'windows',
-            'darwin': 'macos',
-            'linux': 'linux'
+        # Platform-specific arguments
+        platform_specific = {
+            'windows': ['--installer', '--msi'],
+            'macos': ['--dmg', '--universal'],
+            'linux': ['--appimage', '--deb', '--rpm']
         }
         
-        target_platform = platform_mapping.get(self.current_platform)
+        # Filter out unsupported arguments
+        supported_args = common_args + platform_specific.get(platform_name, [])
+        filtered = [arg for arg in args if arg in supported_args]
         
-        if target_platform:
-            print(f"\n💡 Empfohlener Build für dein System: {self.get_platform_display_name(target_platform)}")
-            return self.run_platform_build(target_platform)
-        else:
-            print(f"❌ Unbekanntes System: {self.current_platform}")
-            return False
+        return filtered
 
 def main():
     """Hauptfunktion für Platform Build Selection"""
@@ -466,6 +445,7 @@ Beispiele:
     if args.installer:
         additional_args.append('--installer')
     if args.packages:
+        # Add all package types - will be filtered per platform
         additional_args.extend(['--portable', '--installer', '--msi', '--dmg', '--appimage', '--deb', '--rpm'])
     if args.quick:
         additional_args.append('--quick')
@@ -511,9 +491,9 @@ Beispiele:
                 return 0 if selector.run_all_platforms(quick_args) else 1
             else:
                 # Einzelne Plattform mit Paketen
-                platform_args = additional_args + ['--portable', '--installer']
+                platform_args = additional_args + ['--portable']
                 if choice == 'windows':
-                    platform_args.append('--msi')
+                    platform_args.extend(['--installer', '--msi'])
                 elif choice == 'macos':
                     platform_args.append('--dmg')
                 elif choice == 'linux':
