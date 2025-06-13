@@ -49,9 +49,9 @@ Diese Anwendung hilft Schützen dabei, die korrekten Zielfernrohr-Anpassungen zu
 
 | Plattform | Download | Größe | Status |
 |-----------|----------|-------|--------|
-| 🪟 **Windows (Setup)** | [riflescope-calculator-setup-x64.exe](https://github.com/EyJunge1/Riflescope-Clicks-Calculator/releases/download/latest/riflescope-calculator-setup-x64.exe) | ~26 MB | ✅ **Verfügbar** |
-| 🪟 **Windows (Executable)** | [riflescope-calculator.exe](https://github.com/EyJunge1/Riflescope-Clicks-Calculator/releases/download/latest/riflescope-calculator.exe) | ~25 MB | ✅ **Verfügbar** |
-| 🪟 **Windows (Portable ZIP)** | [riflescope-calculator-portable-x64.zip](https://github.com/EyJunge1/Riflescope-Clicks-Calculator/releases/download/latest/riflescope-calculator-portable-x64.zip) | ~23 MB | ✅ **Verfügbar** |
+| 🪟 **Windows (Setup)** | [riflescope-calculator-setup-x64.exe](https://github.com/EyJunge1/Riflescope-Clicks-Calculator/releases/download/latest/riflescope-calculator-setup-x64.exe) | ~12 MB | ✅ **Verfügbar** |
+| 🪟 **Windows (Executable)** | [riflescope-calculator.exe](https://github.com/EyJunge1/Riflescope-Clicks-Calculator/releases/download/latest/riflescope-calculator.exe) | ~12 MB | ✅ **Verfügbar** |
+| 🪟 **Windows (Portable ZIP)** | [riflescope-calculator-portable-x64.zip](https://github.com/EyJunge1/Riflescope-Clicks-Calculator/releases/download/latest/riflescope-calculator-portable-x64.zip) | ~12 MB | ✅ **Verfügbar** |
 
 > 💡 **Hinweis**: macOS und Linux Builds werden bald verfügbar sein. **Support für andere Betriebssysteme wird in Kürze hinzugefügt!** In der Zwischenzeit können Sie die Python-Version verwenden.
 
