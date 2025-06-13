@@ -555,7 +555,7 @@ exe = EXE(
             return False
     
     def verify_executable(self) -> bool:
-        """Verifiziere erstellte Executable"""
+        """Verifiziere erstellte Executable (GUI-sicher)"""
         self.log_step("Verifiziere Windows Executable", "PROGRESS")
         
         exe_path = self.project_root / self.config.DIST_DIR / self.config.EXE_NAME
@@ -577,24 +577,105 @@ exe = EXE(
         
         self.log_step(f"Executable OK ({size_mb:.1f}MB)", "SUCCESS")
         
-        # Teste Executable (falls möglich)
-        if platform.system().lower() == 'windows':
-            try:
-                # Kurzer Test-Start (nur Version prüfen)
-                result = subprocess.run(
-                    [str(exe_path), '--version'], 
-                    capture_output=True, 
-                    text=True, 
-                    timeout=10
-                )
-                if result.returncode == 0:
-                    self.log_step("Executable Test erfolgreich", "SUCCESS")
-                else:
-                    self.log_step("Executable Test fehlgeschlagen", "WARNING")
-            except (subprocess.TimeoutExpired, FileNotFoundError):
-                self.log_step("Executable Test nicht möglich", "WARNING")
+        # Erweiterte statische Tests
+        self._perform_static_executable_tests(exe_path)
         
         return True
+    
+    def _perform_static_executable_tests(self, exe_path: Path) -> None:
+        """Führe statische Tests durch (ohne Programmstart)"""
+        
+        # 1. PE-Header Analyse
+        try:
+            import pefile
+            pe = pefile.PE(str(exe_path))
+            
+            # Prüfe PE-Typ
+            if pe.is_exe():
+                self.log_step("✓ Gültiges PE-Executable", "SUCCESS")
+            else:
+                self.log_step("⚠ Unerwarteter PE-Typ", "WARNING")
+            
+            # Prüfe Architektur
+            if pe.FILE_HEADER.Machine == 0x8664:  # AMD64
+                arch = "x64"
+            elif pe.FILE_HEADER.Machine == 0x14c:  # i386
+                arch = "x86"
+            else:
+                arch = "unbekannt"
+            
+            self.log_step(f"✓ Architektur: {arch}", "SUCCESS")
+            
+            # Prüfe Subsystem
+            subsystem = pe.OPTIONAL_HEADER.Subsystem
+            if subsystem == 2:  # GUI
+                self.log_step("✓ Windows GUI Subsystem", "SUCCESS")
+            elif subsystem == 3:  # Console
+                self.log_step("✓ Windows Console Subsystem", "SUCCESS")
+            else:
+                self.log_step(f"⚠ Unbekanntes Subsystem: {subsystem}", "WARNING")
+            
+            # Prüfe wichtige DLL-Imports
+            try:
+                imports = []
+                if hasattr(pe, 'DIRECTORY_ENTRY_IMPORT'):
+                    for entry in pe.DIRECTORY_ENTRY_IMPORT:
+                        dll_name = entry.dll.decode('utf-8').lower()
+                        imports.append(dll_name)
+                
+                # Wichtige DLLs prüfen
+                essential_dlls = ['kernel32.dll', 'user32.dll']
+                gui_dlls = ['gdi32.dll', 'shell32.dll']
+                
+                for dll in essential_dlls:
+                    if dll in imports:
+                        self.log_step(f"✓ {dll} importiert", "SUCCESS")
+                    else:
+                        self.log_step(f"⚠ {dll} fehlt", "WARNING")
+                
+                if any(dll in imports for dll in gui_dlls):
+                    self.log_step("✓ GUI-DLLs erkannt", "SUCCESS")
+                
+            except Exception:
+                self.log_step("⚠ Import-Analyse fehlgeschlagen", "WARNING")
+            
+            pe.close()
+            
+        except ImportError:
+            self.log_step("ℹ PE-Analyse übersprungen (pefile nicht verfügbar)", "INFO")
+        except Exception as e:
+            self.log_step(f"⚠ PE-Analyse Fehler: {e}", "WARNING")
+        
+        # 2. Datei-Signatur prüfen
+        try:
+            with open(exe_path, 'rb') as f:
+                header = f.read(2)
+                if header == b'MZ':
+                    self.log_step("✓ Gültige DOS-Header", "SUCCESS")
+                else:
+                    self.log_step("⚠ Ungültige DOS-Header", "WARNING")
+        except Exception as e:
+            self.log_step(f"⚠ Header-Test Fehler: {e}", "WARNING")
+        
+        # 3. Windows-spezifische Tests
+        if platform.system().lower() == 'windows':
+            # Teste ob Datei als Executable erkannt wird
+            try:
+                result = subprocess.run(
+                    ['file', str(exe_path)], 
+                    capture_output=True, 
+                    text=True, 
+                    timeout=5
+                )
+                if 'executable' in result.stdout.lower():
+                    self.log_step("✓ Als Executable erkannt", "SUCCESS")
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                # 'file' command nicht verfügbar - das ist OK
+                pass
+            except Exception:
+                pass
+        
+        self.log_step("Statische Executable-Tests abgeschlossen", "INFO")
     
     def sign_executable(self, cert_path: Optional[str] = None, cert_password: Optional[str] = None) -> bool:
         """Code-Signing für Windows Executable"""
@@ -688,6 +769,22 @@ exe = EXE(
     
     def _create_nsis_script(self) -> str:
         """Erstelle erweiterte NSIS Script"""
+        
+        # Get the actual icon path that was found
+        icon_path = self.get_icon_path()
+        icon_directive = ""
+        
+        if icon_path and icon_path.exists():
+            # Use relative path from installer directory to icon
+            relative_icon_path = os.path.relpath(icon_path, self.project_root / self.config.INSTALLER_DIR)
+            icon_directive = f'!define MUI_ICON "{relative_icon_path}"\n!define MUI_UNICON "{relative_icon_path}"'
+        else:
+            # No icon directives if icon not found
+            icon_directive = "; No icon file found - using default Windows icon"
+        
+        # Calculate relative path from installer directory to dist directory
+        dist_relative_path = os.path.relpath(self.project_root / self.config.DIST_DIR, self.project_root / self.config.INSTALLER_DIR)
+        
         return f'''!define APP_NAME "{self.config.APP_DISPLAY_NAME}"
 !define APP_VERSION "{self.config.APP_VERSION}"
 !define APP_PUBLISHER "{self.config.APP_AUTHOR}"
@@ -697,7 +794,7 @@ exe = EXE(
 
 # Installer Eigenschaften
 Name "${{APP_NAME}}"
-OutFile "../{self.config.DIST_DIR}/{self.config.INSTALLER_NAME}"
+OutFile "{dist_relative_path}\\{self.config.INSTALLER_NAME}"
 InstallDir "$PROGRAMFILES64\\${{APP_NAME}}"
 RequestExecutionLevel admin
 ShowInstDetails show
@@ -716,11 +813,9 @@ VIAddVersionKey "FileVersion" "{self.config.APP_VERSION}"
 
 # UI Konfiguration
 !define MUI_ABORTWARNING
-!define MUI_ICON "../icons/app.ico"
-!define MUI_UNICON "../icons/app.ico"
+{icon_directive}
 
 # Installer Seiten
-!insertmacro MUI_PAGE_LICENSE "../LICENSE"
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
@@ -738,7 +833,7 @@ Section "Hauptprogramm" SecMain
   SectionIn RO
   
   SetOutPath "$INSTDIR"
-  File "../{self.config.DIST_DIR}/${{APP_EXE}}"
+  File "{dist_relative_path}\\${{APP_EXE}}"
   
   # Registry Einträge
   WriteRegStr HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${{APP_NAME}}" "DisplayName" "${{APP_NAME}}"

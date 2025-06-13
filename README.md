@@ -31,34 +31,38 @@ Diese Anwendung hilft Schützen dabei, die korrekten Zielfernrohr-Anpassungen zu
 
 ### 📋 Systemvoraussetzungen
 
-| Betriebssystem | Minimum | Empfohlen | Zusätzliche Hinweise |
-|----------------|---------|-----------|---------------------|
-| **🪟 Windows** | Windows 10 | Windows 11 | x64 und ARM64 unterstützt |
-| **🍎 macOS** | macOS 10.15+ | macOS 13+ | Intel und Apple Silicon (M1/M2/M3/M4) |
-| **🐧 Linux** | Ubuntu 20.04+ | Ubuntu 24.04+ | x86_64, ARM64, Wayland & X11 |
+| Betriebssystem | Minimum | Empfohlen | Build-Status |
+|----------------|---------|-----------|--------------|
+| **🪟 Windows** | Windows 10 | Windows 11 | ✅ **Vollständig unterstützt** |
+| **🍎 macOS** | macOS 10.15+ | macOS 13+ | 🔄 **Bald verfügbar** |
+| **🐧 Linux** | Ubuntu 20.04+ | Ubuntu 24.04+ | 🔄 **Bald verfügbar** |
+
+> 📢 **Aktueller Status**: Das Build-System unterstützt derzeit vollständig nur Windows. Unterstützung für macOS und Linux wird in Kürze hinzugefügt!
 
 ## 💾 Installations-Optionen
 
-### 🏆 Option 1: Fertige Anwendung (Empfohlen)
+### 🏆 Option 1: Fertige Windows-Anwendung (Empfohlen)
 
 > ⚡ **Schnellste Installation** - Ein Download, sofort einsatzbereit
 
-#### 📦 Direkte Downloads
+#### 📦 Verfügbare Downloads
 
-| Plattform | Download | Größe | Installer-Typ |
-|-----------|----------|-------|---------------|
-| 🪟 **Windows** | [Setup.exe](https://github.com/yourusername/Riflescope-Clicks-Calculator/releases/latest/download/riflescope-calculator-setup-x64.exe) | 25 MB | MSI Installer |
-| 🪟 **Windows (Portable)** | [Portable.zip](https://github.com/yourusername/Riflescope-Clicks-Calculator/releases/latest/download/riflescope-calculator-portable-x64.zip) | 23 MB | Keine Installation |
-| 🍎 **macOS** | [App.dmg](https://github.com/yourusername/Riflescope-Clicks-Calculator/releases/latest/download/riflescope-calculator-macos.dmg) | 28 MB | Universal Binary |
-| 🐧 **Linux** | [AppImage](https://github.com/yourusername/Riflescope-Clicks-Calculator/releases/latest/download/riflescope-calculator-linux-x86_64.AppImage) | 27 MB | Portable |
-| 🐧 **Linux (deb)** | [.deb](https://github.com/yourusername/Riflescope-Clicks-Calculator/releases/latest/download/riflescope-calculator_1.0.0_amd64.deb) | 25 MB | Debian/Ubuntu |
-| 🐧 **Linux (rpm)** | [.rpm](https://github.com/yourusername/Riflescope-Clicks-Calculator/releases/latest/download/riflescope-calculator-1.0.0-1.x86_64.rpm) | 25 MB | Fedora/RHEL |
+| Plattform | Download | Größe | Status |
+|-----------|----------|-------|--------|
+| 🪟 **Windows (Setup)** | [Setup.exe](https://github.com/yourusername/Riflescope-Clicks-Calculator/releases/latest/download/riflescope-calculator-setup-x64.exe) | 25 MB | ✅ **Verfügbar** |
+| 🪟 **Windows (Portable)** | [Portable.zip](https://github.com/yourusername/Riflescope-Clicks-Calculator/releases/latest/download/riflescope-calculator-portable-x64.zip) | 23 MB | ✅ **Verfügbar** |
+| 🍎 **macOS** | App.dmg | ~28 MB | 🔄 **In Entwicklung** |
+| 🐧 **Linux (AppImage)** | AppImage | ~27 MB | 🔄 **In Entwicklung** |
+| 🐧 **Linux (deb)** | .deb | ~25 MB | 🔄 **In Entwicklung** |
+| 🐧 **Linux (rpm)** | .rpm | ~25 MB | 🔄 **In Entwicklung** |
+
+> 💡 **Hinweis**: macOS und Linux Builds werden bald verfügbar sein. In der Zwischenzeit können Sie die Python-Version verwenden.
 
 ---
 
-### 🐍 Option 2: Python-Ausführung
+### 🐍 Option 2: Python-Ausführung (Alle Plattformen)
 
-> 🔧 **Für Entwickler** - Neueste Features, Anpassungen möglich
+> 🔧 **Sofort verfügbar** - Funktioniert auf allen Plattformen
 
 #### Schnellstart (benötigt nur Python)
 ```bash
@@ -89,54 +93,57 @@ pip install -r requirements.txt
 python run.py
 ```
 
-#### Als Python Package
-```bash
-# Installation via pip (lokal)
-pip install .
-
-# Installation aus GitHub
-pip install git+https://github.com/yourusername/Riflescope-Clicks-Calculator.git
-
-# Starten
-riflescope-calculator
-# oder
-python -m riflescope_calculator
-```
-
 ---
 
-### ⚙️ Option 4: Eigene Builds erstellen
+### ⚙️ Option 3: Eigene Builds erstellen
 
-> 🛠️ **Vollständige Kontrolle** - Anpassbare Builds für Distribution
+> 🛠️ **Für Entwickler** - Erstelle eigene Distributionen
 
-#### Universal Build System
+#### Aktuell verfügbare Builds
+
 ```bash
-# Interaktive Platform-Auswahl
-python scripts/build.py
-
-# Automatisch für aktuelles System
-python scripts/build.py --recommended
-
-# Spezifische Plattformen
-python scripts/build.py --windows --installer --portable
-python scripts/build.py --macos --universal --portable  
-python scripts/build.py --linux --appimage --portable
-
-# Alle Plattformen mit allen Optionen
-python scripts/build.py --all --installer --portable --test
+# Windows Build (vollständig unterstützt)
+python scripts/build.py --windows                       # Standard: .exe + .zip
+python scripts/build.py --windows --all                 # Alle Windows Pakete
+python scripts/build.py --windows --installer           # .exe + .zip + NSIS Installer
+python scripts/build.py --windows --portable-only       # Nur .zip (schnell)
+python scripts/build.py --windows --exe-only            # Nur .exe (sehr schnell)
 ```
 
-#### Build-Optionen im Detail
+#### Bald verfügbare Builds
 
-| Option | Beschreibung | Windows | macOS | Linux |
-|--------|--------------|:-------:|:-----:|:-----:|
-| `--installer` | MSI/PKG/DEB Installer | ✅ | ✅ | ✅ |
-| `--portable` | ZIP/TAR.GZ Archive | ✅ | ✅ | ✅ |
-| `--universal` | Universal Binary | ❌ | ✅ | ❌ |
-| `--appimage` | AppImage Format | ❌ | ❌ | ✅ |
-| `--signed` | Code Signing | ✅ | ✅ | ❌ |
-| `--optimized` | Size/Speed optimiert | ✅ | ✅ | ✅ |
-| `--debug` | Debug-Symbole | ✅ | ✅ | ✅ |
+```bash
+# macOS Build (in Entwicklung)
+python scripts/build.py --macos                         # Standard: .app + .dmg
+python scripts/build.py --macos --all                   # Alle macOS Pakete
+
+# Linux Build (in Entwicklung)  
+python scripts/build.py --linux                         # Standard: Binary + .deb
+python scripts/build.py --linux --all                   # Alle Linux Pakete
+```
+
+#### Windows Build-Optionen im Detail
+
+| Option | Beschreibung | Status |
+|--------|--------------|:------:|
+| `--windows` | Standard Windows Build (.exe + .zip) | ✅ |
+| `--installer` | NSIS Installer erstellen | ✅ |
+| `--msi` | MSI Installer erstellen | ✅ |
+| `--portable-only` | Nur Portable ZIP | ✅ |
+| `--exe-only` | Nur Executable | ✅ |
+| `--all` | Alle Windows Pakete | ✅ |
+| `--sign` | Code Signing | ✅ |
+| `--clean` | Clean Build | ✅ |
+
+#### Cross-Platform Build-Status
+
+| Plattform | Standard | Installer | Portable | Status |
+|-----------|:--------:|:---------:|:--------:|:------:|
+| **🪟 Windows** | ✅ | ✅ | ✅ | **Vollständig** |
+| **🍎 macOS** | 🔄 | 🔄 | 🔄 | **Bald verfügbar** |
+| **🐧 Linux** | 🔄 | 🔄 | 🔄 | **Bald verfügbar** |
+
+> 🚧 **Entwicklungshinweis**: Das Build-System wird kontinuierlich erweitert. macOS (.app, .dmg) und Linux (AppImage, .deb, .rpm) Unterstützung wird in den nächsten Versionen hinzugefügt.
 
 ---
 
@@ -144,9 +151,31 @@ python scripts/build.py --all --installer --portable --test
 
 ### 🔄 Automatische Updates
 
-- **Windows**: Über Windows Update oder integrierte Update-Funktion
-- **macOS**: Über Mac App Store oder Sparkle Framework
-- **Linux**: Über Package Manager oder integrierte Update-Funktion
+- **Windows**: Über integrierte Update-Funktion oder manueller Download
+- **macOS**: Wird mit macOS-Build verfügbar sein
+- **Linux**: Wird mit Linux-Build verfügbar sein
+
+### 📋 Roadmap
+
+#### ✅ Abgeschlossen
+- Windows .exe Build
+- Windows .zip Portable
+- Windows NSIS/MSI Installer
+- Python Cross-Platform Support
+
+#### 🔄 In Entwicklung
+- macOS .app Bundle
+- macOS .dmg Installer
+- Linux AppImage
+- Linux .deb/.rpm Pakete
+- Automatische Updates für alle Plattformen
+
+#### 📋 Geplant
+- Windows Store Distribution
+- Mac App Store Distribution
+- Linux Package Repository
+- Docker Container
+- Web-basierte Version
 
 ### 🐛 Support Kanäle
 
