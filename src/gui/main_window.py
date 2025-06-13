@@ -38,6 +38,9 @@ class MainWindow:
         self.root.title(AppSettings.APP_TITLE)
         self.root.geometry(AppSettings.MAIN_WINDOW_SIZE)
         self.root.resizable(False, False)
+        
+        # Store project root for icon loading
+        self.project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     
     def _setup_window_properties(self):
         """Setup window styling, icon, and positioning"""
@@ -92,14 +95,25 @@ class MainWindow:
         self.root.geometry(f'+{x}+{y}')
     
     def load_icon(self):
-        icons_dir = AppSettings.get_icons_dir()
-        icon_path = os.path.join(icons_dir, 'target_icon.ico')
+        # Priorität auf target_icon.ico
+        icon_locations = [
+            os.path.join(self.project_root, "icons", "target_icon.ico"),
+            os.path.join(AppSettings.get_icons_dir(), "target_icon.ico"),
+            os.path.join("icons", "target_icon.ico"),
+            "target_icon.ico"
+        ]
         
-        if os.path.exists(icon_path):
-            try:
-                self.root.iconbitmap(icon_path)
-            except tk.TclError as e:
-                messagebox.showwarning("Symbolwarnung", f"Anwendungssymbol konnte nicht geladen werden: {str(e)}")
+        for icon_path in icon_locations:
+            if os.path.exists(icon_path):
+                try:
+                    self.root.iconbitmap(icon_path)
+                    gui_main_logger.info(f"Icon erfolgreich geladen: {icon_path}")
+                    return
+                except tk.TclError as e:
+                    gui_main_logger.warning(f"Icon konnte nicht geladen werden: {icon_path} - {e}")
+                    continue
+        
+        gui_main_logger.warning("Kein gültiges Icon gefunden (target_icon.ico)")
     
     def setup_components(self):
         for i in range(3):
