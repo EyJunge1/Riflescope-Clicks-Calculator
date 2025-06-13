@@ -89,16 +89,28 @@ class BuildOrchestrator:
             print("   • .exe Executable")
             print("   • .zip Portable Package")
             print("   • Installer (eingeschränkt)")
+            print()
+            print("💡 FERTIGE WINDOWS BUILDS VERFÜGBAR:")
+            print("   📦 Setup: https://github.com/EyJunge1/Riflescope-Clicks-Calculator/releases/download/windows/riflescope-calculator-setup-x64.exe")
+            print("   🚀 Executable: https://github.com/EyJunge1/Riflescope-Clicks-Calculator/releases/download/windows/riflescope-calculator.exe")
+            print("   📁 Portable ZIP: https://github.com/EyJunge1/Riflescope-Clicks-Calculator/releases/download/windows/riflescope-calculator-portable-x64.zip")
         
-        if self.is_macos:
-            print("🔮 macOS Build (Geplant)")
+        if not self.is_macos:
+            print("🔮 macOS Build (Bald verfügbar)")
+            print("   • Support für andere Betriebssysteme wird bald hinzugefügt!")
         else:
-            print("❌ macOS Build (Nicht verfügbar)")
+            print("🔮 macOS Build (In Entwicklung)")
         
-        if self.is_linux:
-            print("🔮 Linux Build (Geplant)")
+        if not self.is_linux:
+            print("🔮 Linux Build (Bald verfügbar)")
+            print("   • Support für andere Betriebssysteme wird bald hinzugefügt!")
         else:
-            print("❌ Linux Build (Nicht verfügbar)")
+            print("🔮 Linux Build (In Entwicklung)")
+        
+        if not self.is_windows:
+            print(f"\n⚠️  Aktuell werden nur Windows-Builds vollständig unterstützt.")
+            print(f"   Andere Betriebssysteme (macOS, Linux) werden bald unterstützt!")
+            print(f"   Erkanntes System: {platform.system()} {platform.release()}")
     
     def check_windows_builder(self) -> bool:
         """Prüfe Windows Build Script"""
