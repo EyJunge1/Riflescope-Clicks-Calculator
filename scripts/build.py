@@ -359,9 +359,13 @@ class PlatformBuildSelector:
             'linux': ['--appimage', '--deb', '--rpm']
         }
         
-        # Filter out unsupported arguments
-        supported_args = common_args + platform_specific.get(platform_name, [])
-        filtered = [arg for arg in args if arg in supported_args]
+        # Start with common args that are present
+        filtered = [arg for arg in args if arg in common_args]
+        
+        # Add platform-specific args
+        if platform_name in platform_specific:
+            platform_args = platform_specific[platform_name]
+            filtered.extend([arg for arg in args if arg in platform_args])
         
         return filtered
     
@@ -378,7 +382,10 @@ class PlatformBuildSelector:
         
         for platform in platforms:
             print(f"\n🔄 Building for {self.get_platform_display_name(platform)}...")
-            results[platform] = self.run_platform_build(platform, additional_args)
+            
+            # Filter arguments for this platform
+            filtered_args = self.filter_platform_args(platform, additional_args)
+            results[platform] = self.run_platform_build(platform, filtered_args)
         
         # Show summary
         print("\n📊 BUILD SUMMARY")
@@ -493,7 +500,7 @@ Beispiele:
     if args.installer:
         additional_args.append('--installer')
     if args.packages:
-        # Add all package types - will be filtered per platform
+        # Add platform-specific package types - will be filtered per platform
         additional_args.extend(['--portable', '--installer', '--msi', '--dmg', '--appimage', '--deb', '--rpm'])
     if args.quick:
         additional_args.append('--quick')
@@ -520,7 +527,8 @@ Beispiele:
             # Spezifische Plattform(en) gewählt
             success = True
             for platform in selected_platforms:
-                if not selector.run_platform_build(platform, additional_args):
+                filtered_args = selector.filter_platform_args(platform, additional_args)
+                if not selector.run_platform_build(platform, filtered_args):
                     success = False
             return 0 if success else 1
         else:
@@ -530,7 +538,7 @@ Beispiele:
             if choice is None:
                 return 1
             elif choice == 'all':
-                # Alle Plattformen mit Paketen
+                # Alle Plattformen mit gefilterten Paketen
                 packages_args = additional_args + ['--portable', '--installer', '--msi', '--dmg', '--appimage', '--deb', '--rpm']
                 return 0 if selector.run_all_platforms(packages_args) else 1
             elif choice == 'quick':
@@ -538,7 +546,7 @@ Beispiele:
                 quick_args = additional_args + ['--quick']
                 return 0 if selector.run_all_platforms(quick_args) else 1
             else:
-                # Einzelne Plattform mit Paketen
+                # Einzelne Plattform mit gefilterten Paketen
                 platform_args = additional_args + ['--portable']
                 if choice == 'windows':
                     platform_args.extend(['--installer', '--msi'])
@@ -547,7 +555,8 @@ Beispiele:
                 elif choice == 'linux':
                     platform_args.extend(['--appimage', '--deb', '--rpm'])
                 
-                return 0 if selector.run_platform_build(choice, platform_args) else 1
+                filtered_args = selector.filter_platform_args(choice, platform_args)
+                return 0 if selector.run_platform_build(choice, filtered_args) else 1
     
     except KeyboardInterrupt:
         print("\n\nBuild abgebrochen.")
@@ -555,6 +564,3 @@ Beispiele:
     except Exception as e:
         print(f"\n❌ Unerwarteter Fehler: {e}")
         return 1
-
-if __name__ == "__main__":
-    sys.exit(main())
