@@ -49,8 +49,9 @@ Diese Anwendung hilft Schützen dabei, die korrekten Zielfernrohr-Anpassungen zu
 
 | Plattform | Download | Größe | Status |
 |-----------|----------|-------|--------|
-| 🪟 **Windows (Setup)** | [Setup.exe](https://github.com/yourusername/Riflescope-Clicks-Calculator/releases/latest/download/riflescope-calculator-setup-x64.exe) | 25 MB | ✅ **Verfügbar** |
-| 🪟 **Windows (Portable)** | [Portable.zip](https://github.com/yourusername/Riflescope-Clicks-Calculator/releases/latest/download/riflescope-calculator-portable-x64.zip) | 23 MB | ✅ **Verfügbar** |
+| 🪟 **Windows (Executable)** | [RiflescopeCalculator.exe](./dist/RiflescopeCalculator.exe) | ~25 MB | ✅ **Verfügbar** |
+| 🪟 **Windows (Portable ZIP)** | [RiflescopeCalculator-portable.zip](./dist/RiflescopeCalculator-portable.zip) | ~23 MB | ✅ **Verfügbar** |
+| 🪟 **Windows (NSIS Setup)** | [RiflescopeCalculator-setup.exe](./dist/RiflescopeCalculator-setup.exe) | ~26 MB | ✅ **Verfügbar** |
 
 > 💡 **Hinweis**: macOS und Linux Builds werden bald verfügbar sein. In der Zwischenzeit können Sie die Python-Version verwenden.
 
