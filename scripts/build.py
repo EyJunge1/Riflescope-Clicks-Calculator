@@ -1,25 +1,21 @@
 #!/usr/bin/env python3
 """
-🎯 RIFLESCOPE CALCULATOR - UNIVERSAL BUILD ORCHESTRATOR 🎯
+🎯 RIFLESCOPE CALCULATOR - BUILD SCRIPT 🎯
 
-Zentraler Build-Startpunkt für alle Plattformen
-Optimiert für Windows mit vollständiger Installer-Unterstützung
+Einfacher Build-Script für Windows EXE-Erstellung
+Erstellt eine ausführbare .exe-Datei Ihrer Riflescope Calculator Anwendung
 
-🚀 VERFÜGBARE BUILDS:
-- 🪟 Windows → .exe + .zip + Installer (NSIS/MSI)
-- 🍎 macOS → .app + .dmg (geplant)
-- 🐧 Linux → Binary + .deb/.rpm (geplant)
+📋 VERWENDUNG:
+    python scripts/build.py                    # Standard Build
+    python scripts/build.py --clean            # Clean Build (lösche vorherige Builds)
+    python scripts/build.py --portable         # Zusätzlich Portable ZIP erstellen
+    python scripts/build.py --installer        # Zusätzlich NSIS Installer erstellen
+    python scripts/build.py --all              # Alle Pakete erstellen
 
-📋 QUICK START - WINDOWS:
-    python scripts/build.py --windows                       # Standard: .exe + .zip
-    python scripts/build.py --windows --all                 # Alle Windows Pakete
-    python scripts/build.py --windows --installer           # .exe + .zip + NSIS Installer
-    python scripts/build.py --windows --portable-only       # Nur .zip (schnell)
-    python scripts/build.py --windows --exe-only            # Nur .exe (sehr schnell)
-
-🎯 EMPFOHLENE BEFEHLE:
-    python scripts/build.py --windows --all                 # Vollständige Distribution
-    python scripts/build.py --windows                       # Standard Build (schnell)
+🎯 AUSGABE:
+    dist/riflescope-calculator.exe             # Hauptprogramm
+    dist/riflescope-calculator-portable.zip    # Portable Version (optional)
+    dist/riflescope-calculator-setup.exe       # Installer (optional)
 """
 
 import os
@@ -29,454 +25,444 @@ import platform
 import argparse
 import shutil
 import time
+import zipfile
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Optional
 
-class BuildOrchestrator:
-    """Zentraler Build Orchestrator für alle Plattformen"""
+class RiflescopeBuilder:
+    """Einfacher Builder für Riflescope Calculator"""
     
     def __init__(self):
         self.project_root = Path(__file__).parent.parent
-        self.scripts_dir = self.project_root / "scripts"
+        self.build_dir = self.project_root / "build"
         self.dist_dir = self.project_root / "dist"
+        self.src_dir = self.project_root / "src"
+        self.run_file = self.project_root / "run.py"
         
-        # Platform Info
-        self.current_platform = platform.system().lower()
-        self.is_windows = self.current_platform == 'windows'
-        self.is_macos = self.current_platform == 'darwin'
-        self.is_linux = self.current_platform == 'linux'
+        # App-Informationen
+        self.app_name = "riflescope-calculator"
+        self.app_display_name = "Riflescope Calculator"
+        self.app_version = "1.0.0"
+        self.exe_name = f"{self.app_name}.exe"
         
-        # App Info
-        self.APP_NAME = "Riflescope Calculator"
-        self.APP_VERSION = "1.0.0"
-        
-        # Build Start Time
+        # Build-Zeit
         self.build_start = time.time()
         
-        print("🎯 RIFLESCOPE CALCULATOR - BUILD ORCHESTRATOR")
-        print("=" * 55)
+        print("🎯 Riflescope Calculator - Build Script")
+        print("=" * 45)
         print(f"📅 Build Zeit: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print(f"🖥️  System: {self.get_platform_emoji()} {platform.system()} {platform.release()}")
+        print(f"🖥️  System: {platform.system()} {platform.release()}")
         print(f"🐍 Python: {sys.version.split()[0]}")
         print(f"📁 Projekt: {self.project_root.name}")
-        
-        # Ensure dist directory exists
-        self.dist_dir.mkdir(exist_ok=True)
     
-    def get_platform_emoji(self):
-        """Platform Emoji für bessere Übersicht"""
-        emojis = {
-            'windows': '🪟',
-            'darwin': '🍎', 
-            'linux': '🐧'
+    def log(self, message: str, status: str = "INFO"):
+        """Einfaches Logging"""
+        icons = {
+            "INFO": "ℹ️",
+            "SUCCESS": "✅",
+            "WARNING": "⚠️",
+            "ERROR": "❌",
+            "PROGRESS": "🔄"
         }
-        return emojis.get(self.current_platform, '💻')
+        icon = icons.get(status, "•")
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"{icon} [{timestamp}] {message}")
     
-    def print_available_builds(self):
-        """Zeige verfügbare Build-Optionen"""
-        print(f"\n🚀 VERFÜGBARE BUILDS:")
-        print("-" * 25)
+    def check_requirements(self) -> bool:
+        """Prüfe Systemvoraussetzungen"""
+        self.log("Prüfe Systemvoraussetzungen", "PROGRESS")
         
-        if self.is_windows:
-            print("✅ Windows Build (Nativ)")
-            print("   • .exe Executable")
-            print("   • .zip Portable Package") 
-            print("   • NSIS Installer (.exe)")
-            print("   • MSI Installer (experimentell)")
-        else:
-            print("🔄 Windows Build (Cross-Platform)")
-            print("   • .exe Executable")
-            print("   • .zip Portable Package")
-            print("   • Installer (eingeschränkt)")
-            print()
-            print("💡 FERTIGE WINDOWS BUILDS VERFÜGBAR:")
-            print("   📦 Setup: https://github.com/EyJunge1/Riflescope-Clicks-Calculator/releases/download/windows/riflescope-calculator-setup-x64.exe")
-            print("   🚀 Executable: https://github.com/EyJunge1/Riflescope-Clicks-Calculator/releases/download/windows/riflescope-calculator.exe")
-            print("   📁 Portable ZIP: https://github.com/EyJunge1/Riflescope-Clicks-Calculator/releases/download/windows/riflescope-calculator-portable-x64.zip")
-        
-        if not self.is_macos:
-            print("🔮 macOS Build (Bald verfügbar)")
-            print("   • Support für andere Betriebssysteme wird bald hinzugefügt!")
-        else:
-            print("🔮 macOS Build (In Entwicklung)")
-        
-        if not self.is_linux:
-            print("🔮 Linux Build (Bald verfügbar)")
-            print("   • Support für andere Betriebssysteme wird bald hinzugefügt!")
-        else:
-            print("🔮 Linux Build (In Entwicklung)")
-        
-        if not self.is_windows:
-            print(f"\n⚠️  Aktuell werden nur Windows-Builds vollständig unterstützt.")
-            print(f"   Andere Betriebssysteme (macOS, Linux) werden bald unterstützt!")
-            print(f"   Erkanntes System: {platform.system()} {platform.release()}")
-    
-    def check_windows_builder(self) -> bool:
-        """Prüfe Windows Build Script"""
-        windows_script = self.scripts_dir / "build_windows.py"
-        
-        if not windows_script.exists():
-            print(f"\n❌ Windows Build Script nicht gefunden!")
-            print(f"   Erwartet: {windows_script}")
+        # Python Version
+        if sys.version_info < (3, 7):
+            self.log("Python 3.7+ erforderlich", "ERROR")
             return False
         
-        print(f"\n✅ Windows Builder verfügbar: {windows_script.name}")
+        # Prüfe wichtige Dateien
+        if not self.run_file.exists():
+            self.log("run.py nicht gefunden", "ERROR")
+            return False
+        
+        if not self.src_dir.exists():
+            self.log("src-Verzeichnis nicht gefunden", "ERROR")
+            return False
+        
+        self.log("Systemvoraussetzungen OK", "SUCCESS")
         return True
     
-    def show_build_recommendations(self):
-        """Zeige Build-Empfehlungen basierend auf System"""
-        print(f"\n💡 BUILD-EMPFEHLUNGEN:")
-        print("-" * 25)
-        
-        if self.is_windows:
-            print("🎯 OPTIMAL (Windows Nativ):")
-            print("   python scripts/build.py --windows --all")
-            print("   → Erstellt: .exe + .zip + NSIS Installer")
-            print()
-            print("⚡ SCHNELL:")
-            print("   python scripts/build.py --windows")
-            print("   → Erstellt: .exe + .zip")
-            print()
-            print("🚀 NUR EXECUTABLE:")
-            print("   python scripts/build.py --windows --exe-only")
-            print("   → Erstellt: .exe")
-        else:
-            print("⚠️  CROSS-PLATFORM Build:")
-            print("   python scripts/build.py --windows")
-            print("   → Empfohlen für nicht-Windows Systeme")
-            print()
-            print("💡 FÜR BESTE ERGEBNISSE:")
-            print("   → Build auf Windows-System durchführen")
-    
-    def execute_windows_build(self, build_options: Dict) -> bool:
-        """Führe Windows Build durch"""
-        print(f"\n🪟 STARTE WINDOWS BUILD")
-        print("=" * 30)
-        
-        if not self.check_windows_builder():
-            return False
-        
-        # Show cross-platform warning
-        if not self.is_windows:
-            print(f"\n⚠️  CROSS-PLATFORM WARNUNG:")
-            print(f"   Windows Build auf {platform.system()} System")
-            print(f"   Installer-Features können eingeschränkt sein")
-            
+    def install_pyinstaller(self) -> bool:
+        """Installiere PyInstaller falls nicht vorhanden"""
+        try:
+            import PyInstaller
+            self.log("PyInstaller bereits installiert", "SUCCESS")
+            return True
+        except ImportError:
+            self.log("Installiere PyInstaller...", "PROGRESS")
             try:
-                choice = input(f"\n   Fortfahren? (j/N): ").strip().lower()
-                if choice not in ['j', 'ja', 'y', 'yes']:
-                    print("   Build abgebrochen.")
-                    return False
-            except KeyboardInterrupt:
-                print("\n   Build abgebrochen.")
+                subprocess.run([
+                    sys.executable, "-m", "pip", "install", "pyinstaller"
+                ], check=True, capture_output=True)
+                self.log("PyInstaller erfolgreich installiert", "SUCCESS")
+                return True
+            except subprocess.CalledProcessError:
+                self.log("PyInstaller Installation fehlgeschlagen", "ERROR")
                 return False
+    
+    def prepare_build_dirs(self):
+        """Bereite Build-Verzeichnisse vor"""
+        self.log("Bereite Build-Verzeichnisse vor", "PROGRESS")
         
-        # Build Windows-spezifische Kommando-Argumente
-        cmd = [sys.executable, str(self.scripts_dir / "build_windows.py")]
+        # Erstelle Verzeichnisse
+        self.build_dir.mkdir(exist_ok=True)
+        self.dist_dir.mkdir(exist_ok=True)
         
-        # Füge Build-Optionen hinzu
-        if build_options.get('installer'):
-            cmd.append('--installer')
-        if build_options.get('msi'):
-            cmd.append('--msi')
-        if build_options.get('portable'):
-            cmd.append('--portable')
-        if build_options.get('all_packages'):
-            cmd.append('--all')
-        if build_options.get('sign'):
-            cmd.append('--sign')
-        if build_options.get('clean'):
-            cmd.append('--clean')
-        if build_options.get('quick'):
-            cmd.append('--quick')
+        self.log("Build-Verzeichnisse bereit", "SUCCESS")
+    
+    def get_icon_path(self) -> str:
+        """Ermittle Icon-Pfad"""
+        icon_paths = [
+            self.project_root / "icons" / "target_icon.ico",
+            self.project_root / "target_icon.ico"
+        ]
         
-        # Zeige Build-Konfiguration
-        print(f"\n🔧 BUILD KONFIGURATION:")
-        print(f"   Executable: {'✓' if True else '✗'}")
-        print(f"   Portable ZIP: {'✓' if build_options.get('portable', True) else '✗'}")
-        print(f"   NSIS Installer: {'✓' if build_options.get('installer') else '✗'}")
-        print(f"   MSI Installer: {'✓' if build_options.get('msi') else '✗'}")
-        print(f"   Code Signing: {'✓' if build_options.get('sign') else '✗'}")
-        print(f"   Clean Build: {'✓' if build_options.get('clean') else '✗'}")
+        for icon_path in icon_paths:
+            if icon_path.exists():
+                self.log(f"Icon gefunden: {icon_path.name}", "SUCCESS")
+                return str(icon_path)
+        
+        self.log("Kein Icon gefunden - verwende Standard", "WARNING")
+        return ""
+    
+    def build_exe(self) -> bool:
+        """Erstelle EXE mit PyInstaller"""
+        self.log("Erstelle EXE mit PyInstaller", "PROGRESS")
+        
+        icon_path = self.get_icon_path()
+        
+        # PyInstaller Kommando
+        cmd = [
+            "pyinstaller",
+            "--onefile",                    # Einzelne EXE-Datei
+            "--windowed",                   # Kein Konsolen-Fenster
+            "--name", self.app_name,        # Name der EXE
+            "--distpath", str(self.dist_dir),
+            "--workpath", str(self.build_dir),
+            "--specpath", str(self.build_dir),
+            "--clean",                      # Clean Build
+            "--noconfirm",                  # Überschreibe ohne Nachfrage
+        ]
+        
+        # Icon hinzufügen falls vorhanden
+        if icon_path:
+            cmd.extend(["--icon", icon_path])
+        
+        # Zusätzliche Daten einbinden
+        cmd.extend([
+            "--add-data", f"{self.src_dir};src",
+        ])
+        
+        # Icons-Verzeichnis falls vorhanden
+        icons_dir = self.project_root / "icons"
+        if icons_dir.exists():
+            cmd.extend(["--add-data", f"{icons_dir};icons"])
+        
+        # Hauptdatei
+        cmd.append(str(self.run_file))
         
         try:
-            print(f"\n🚀 Starte Windows Build Script...")
-            print(f"📝 Kommando: {' '.join(cmd)}")
+            self.log("Starte PyInstaller...", "PROGRESS")
+            start_time = time.time()
             
-            # Führe Windows Build aus
-            result = subprocess.run(cmd, cwd=self.project_root)
+            result = subprocess.run(
+                cmd,
+                cwd=self.project_root,
+                capture_output=True,
+                text=True,
+                timeout=300  # 5 Minuten Timeout
+            )
+            
+            build_time = time.time() - start_time
             
             if result.returncode == 0:
-                print(f"\n✅ Windows Build erfolgreich!")
+                self.log(f"EXE erfolgreich erstellt ({build_time:.1f}s)", "SUCCESS")
                 return True
             else:
-                print(f"\n❌ Windows Build fehlgeschlagen (Exit Code: {result.returncode})")
+                self.log("PyInstaller fehlgeschlagen", "ERROR")
+                if result.stderr:
+                    print(f"\nFehler-Details:\n{result.stderr}")
                 return False
                 
-        except KeyboardInterrupt:
-            print(f"\n⚠️ Build durch Benutzer abgebrochen")
+        except subprocess.TimeoutExpired:
+            self.log("PyInstaller Timeout (>5min)", "ERROR")
             return False
         except Exception as e:
-            print(f"\n❌ Unerwarteter Build-Fehler: {e}")
+            self.log(f"PyInstaller Fehler: {e}", "ERROR")
             return False
     
-    def show_build_results(self, success: bool):
+    def verify_exe(self) -> bool:
+        """Prüfe erstellte EXE"""
+        self.log("Prüfe erstellte EXE", "PROGRESS")
+        
+        exe_path = self.dist_dir / self.exe_name
+        
+        if not exe_path.exists():
+            self.log(f"EXE nicht gefunden: {self.exe_name}", "ERROR")
+            return False
+        
+        # Dateigröße prüfen
+        size_bytes = exe_path.stat().st_size
+        size_mb = size_bytes / (1024 * 1024)
+        
+        if size_bytes < 1024:  # Kleiner als 1KB
+            self.log("EXE verdächtig klein (<1KB)", "ERROR")
+            return False
+        
+        self.log(f"EXE OK ({size_mb:.1f}MB)", "SUCCESS")
+        return True
+    
+    def create_portable_zip(self) -> bool:
+        """Erstelle Portable ZIP"""
+        self.log("Erstelle Portable ZIP", "PROGRESS")
+        
+        exe_path = self.dist_dir / self.exe_name
+        zip_path = self.dist_dir / f"{self.app_name}-portable.zip"
+        
+        if not exe_path.exists():
+            self.log("EXE für ZIP nicht gefunden", "ERROR")
+            return False
+        
+        try:
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                # EXE hinzufügen
+                zipf.write(exe_path, self.exe_name)
+                
+                # README hinzufügen
+                readme_content = f"""{self.app_display_name} - Portable Version
+
+INSTALLATION:
+1. Entpacken Sie diese ZIP-Datei in einen beliebigen Ordner
+2. Starten Sie {self.exe_name}
+3. Keine Installation erforderlich!
+
+FEATURES:
+- Vollständig portable
+- Kann von USB-Stick ausgeführt werden
+- Keine Registry-Einträge
+- Alle Einstellungen werden lokal gespeichert
+
+Version: {self.app_version}
+Build-Datum: {datetime.now().strftime('%Y-%m-%d')}
+
+Viel Erfolg beim Präzisionsschießen! 🎯
+"""
+                zipf.writestr("README.txt", readme_content)
+            
+            zip_size = zip_path.stat().st_size / (1024 * 1024)
+            self.log(f"Portable ZIP erstellt ({zip_size:.1f}MB)", "SUCCESS")
+            return True
+            
+        except Exception as e:
+            self.log(f"ZIP-Erstellung fehlgeschlagen: {e}", "ERROR")
+            return False
+    
+    def create_nsis_installer(self) -> bool:
+        """Erstelle NSIS Installer"""
+        self.log("Erstelle NSIS Installer", "PROGRESS")
+        
+        # Prüfe ob NSIS verfügbar ist
+        try:
+            subprocess.run(['makensis', '/VERSION'], capture_output=True, check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            self.log("NSIS nicht verfügbar - überspringe Installer", "WARNING")
+            return True
+        
+        # Verwende existierende installer.nsi falls vorhanden
+        nsis_file = self.project_root / "installer" / "installer.nsi"
+        
+        if not nsis_file.exists():
+            self.log("installer.nsi nicht gefunden - überspringe Installer", "WARNING")
+            return True
+        
+        try:
+            result = subprocess.run([
+                'makensis',
+                f'/DVERSION={self.app_version}',
+                str(nsis_file)
+            ], capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                self.log("NSIS Installer erfolgreich erstellt", "SUCCESS")
+                return True
+            else:
+                self.log(f"NSIS Fehler: {result.stderr}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"NSIS Installer Fehler: {e}", "ERROR")
+            return False
+    
+    def cleanup_build_files(self):
+        """Bereinige Build-Dateien"""
+        self.log("Bereinige Build-Dateien", "PROGRESS")
+        
+        # Lösche .spec Datei
+        spec_files = list(self.build_dir.glob("*.spec"))
+        for spec_file in spec_files:
+            try:
+                spec_file.unlink()
+            except Exception:
+                pass
+        
+        # Lösche __pycache__ Verzeichnisse
+        for pycache in self.project_root.rglob("__pycache__"):
+            try:
+                shutil.rmtree(pycache)
+            except Exception:
+                pass
+        
+        self.log("Build-Dateien bereinigt", "SUCCESS")
+    
+    def show_results(self):
         """Zeige Build-Ergebnisse"""
         build_time = time.time() - self.build_start
         
-        print(f"\n" + "=" * 55)
-        print(f"📊 BUILD ZUSAMMENFASSUNG")
-        print("=" * 55)
-        
-        if success:
-            print(f"✅ Build erfolgreich abgeschlossen!")
-        else:
-            print(f"❌ Build mit Fehlern beendet!")
-        
+        print(f"\n" + "=" * 50)
+        print(f"🎉 BUILD ABGESCHLOSSEN!")
+        print("=" * 50)
         print(f"⏱️  Build Zeit: {build_time:.1f} Sekunden")
         print(f"📅 Abgeschlossen: {datetime.now().strftime('%H:%M:%S')}")
         
         # Zeige erstellte Dateien
         if self.dist_dir.exists():
-            created_files = []
-            total_size = 0
-            
-            # Sammle alle relevanten Dateien
-            for pattern in ["*.exe", "*.zip", "*.msi", "*.dmg", "*.deb", "*.rpm"]:
-                created_files.extend(self.dist_dir.glob(pattern))
+            created_files = list(self.dist_dir.glob("*"))
             
             if created_files:
                 print(f"\n📦 ERSTELLTE DATEIEN:")
-                print("-" * 20)
+                print("-" * 25)
+                total_size = 0
                 
                 for file_path in sorted(created_files):
-                    size = file_path.stat().st_size
-                    total_size += size
-                    
-                    if size > 1024 * 1024:  # MB
-                        size_str = f"{size / (1024 * 1024):.1f} MB"
-                    else:  # KB
-                        size_str = f"{size / 1024:.1f} KB"
-                    
-                    file_type = self.get_file_type_emoji(file_path.suffix)
-                    print(f"   {file_type} {file_path.name} ({size_str})")
+                    if file_path.is_file():
+                        size = file_path.stat().st_size
+                        total_size += size
+                        
+                        if size > 1024 * 1024:  # MB
+                            size_str = f"{size / (1024 * 1024):.1f} MB"
+                        else:  # KB
+                            size_str = f"{size / 1024:.1f} KB"
+                        
+                        file_type = "🚀" if file_path.suffix == ".exe" else "📦" if file_path.suffix == ".zip" else "📄"
+                        print(f"   {file_type} {file_path.name} ({size_str})")
                 
                 print(f"\n💾 Gesamt Größe: {total_size / (1024 * 1024):.1f} MB")
-            else:
-                print(f"\n⚠️ Keine Build-Ausgaben gefunden in {self.dist_dir}")
         
         print(f"\n📁 Ausgabe-Verzeichnis: {self.dist_dir}")
-        
-        if success:
-            print(f"\n🎉 {self.APP_NAME} v{self.APP_VERSION} erfolgreich gebaut!")
-            if self.is_windows:
-                print(f"🎯 Bereit für Windows-Distribution!")
-        else:
-            print(f"\n💡 Prüfe die Fehlermeldungen oben für Details")
+        print(f"\n🎯 {self.app_display_name} v{self.app_version} erfolgreich gebaut!")
+        print(f"🚀 Bereit für Windows-Distribution!")
     
-    def get_file_type_emoji(self, extension: str) -> str:
-        """Emoji für Dateitypen"""
-        emoji_map = {
-            '.exe': '🚀',
-            '.zip': '📦',
-            '.msi': '🔧',
-            '.dmg': '💿',
-            '.deb': '📋',
-            '.rpm': '📄'
-        }
-        return emoji_map.get(extension.lower(), '📄')
-    
-    def run_build(self, build_options: Dict) -> bool:
-        """Hauptfunktion für Build-Durchführung"""
+    def run_build(self, options: dict) -> bool:
+        """Führe kompletten Build durch"""
         
-        # Zeige verfügbare Builds
-        self.print_available_builds()
+        # 1. Voraussetzungen prüfen
+        if not self.check_requirements():
+            return False
         
-        # Zeige Empfehlungen
-        self.show_build_recommendations()
+        # 2. PyInstaller installieren
+        if not self.install_pyinstaller():
+            return False
         
-        # Führe passenden Build durch
-        if build_options.get('platform') == 'windows' or build_options.get('windows') or self.is_windows:
-            return self.execute_windows_build(build_options)
-        elif build_options.get('platform') == 'macos' or build_options.get('macos') or self.is_macos:
-            print(f"\n🔮 macOS Build noch nicht implementiert")
+        # 3. Build-Verzeichnisse vorbereiten
+        if options.get('clean'):
+            self.log("Bereinige vorherige Builds", "PROGRESS")
+            if self.build_dir.exists():
+                shutil.rmtree(self.build_dir)
+            if self.dist_dir.exists():
+                shutil.rmtree(self.dist_dir)
+        
+        self.prepare_build_dirs()
+        
+        # 4. EXE erstellen
+        if not self.build_exe():
             return False
-        elif build_options.get('platform') == 'linux' or build_options.get('linux') or self.is_linux:
-            print(f"\n🔮 Linux Build noch nicht implementiert")
+        
+        # 5. EXE prüfen
+        if not self.verify_exe():
             return False
-        else:
-            # Auto-detect und fallback zu Windows wenn kein spezifisches OS angegeben
-            print(f"\n🤖 Kein spezifisches OS angegeben. Verwende --windows, --macos oder --linux")
-            print(f"   Beispiel: python scripts/build.py --windows")
-            return False
+        
+        # 6. Zusätzliche Pakete
+        if options.get('portable') or options.get('all'):
+            self.create_portable_zip()
+        
+        if options.get('installer') or options.get('all'):
+            self.create_nsis_installer()
+        
+        # 7. Aufräumen
+        self.cleanup_build_files()
+        
+        # 8. Ergebnisse anzeigen
+        self.show_results()
+        
+        return True
 
 def parse_arguments():
     """Parse Kommandozeilen-Argumente"""
     parser = argparse.ArgumentParser(
-        description='🎯 Riflescope Calculator - Universal Build Orchestrator',
+        description='🎯 Riflescope Calculator - Build Script',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-🎯 EMPFOHLENE VERWENDUNG:
+🎯 VERWENDUNGSBEISPIELE:
 
-WINDOWS BUILDS:
-  python scripts/build.py --windows                       # Standard: .exe + .zip
-  python scripts/build.py --windows --all                 # Alle Windows Pakete 
-  python scripts/build.py --windows --installer           # .exe + .zip + NSIS
-  python scripts/build.py --windows --exe-only            # Nur .exe
-  python scripts/build.py --windows --portable-only       # Nur .zip
+STANDARD BUILD:
+  python scripts/build.py                    # Nur EXE erstellen
 
-MACOS BUILDS (Geplant):
-  python scripts/build.py --macos                         # Standard: .app + .dmg
-  python scripts/build.py --macos --all                   # Alle macOS Pakete
+ERWEITERTE BUILDS:
+  python scripts/build.py --portable         # EXE + Portable ZIP
+  python scripts/build.py --installer        # EXE + NSIS Installer
+  python scripts/build.py --all              # Alle Pakete erstellen
 
-LINUX BUILDS (Geplant):
-  python scripts/build.py --linux                         # Standard: Binary + .deb
-  python scripts/build.py --linux --all                   # Alle Linux Pakete
-
-SPEZIAL OPTIONEN:
-  python scripts/build.py --windows --clean --all         # Clean + Vollbuild
-  python scripts/build.py --platform windows --all        # Alternative Syntax
+OPTIONEN:
+  python scripts/build.py --clean            # Clean Build (empfohlen)
+  python scripts/build.py --clean --all      # Clean + Alle Pakete
         """
     )
     
-    # Platform Selection (Primary method)
-    platform_group = parser.add_mutually_exclusive_group()
-    platform_group.add_argument('--windows', action='store_true', 
-                       help='🪟 Windows Build (.exe + .zip + Installer)')
-    platform_group.add_argument('--macos', action='store_true', 
-                       help='🍎 macOS Build (.app + .dmg) [Geplant]')
-    platform_group.add_argument('--linux', action='store_true', 
-                       help='🐧 Linux Build (Binary + .deb/.rpm) [Geplant]')
-    
-    # Alternative Platform Selection (Legacy support)
-    parser.add_argument('--platform', choices=['windows', 'macos', 'linux'], 
-                       help='Ziel-Plattform (Alternative zu --windows/--macos/--linux)')
-    
-    # Universal Build Options (work with all platforms)
-    parser.add_argument('--all', action='store_true', 
-                       help='🎯 Alle Pakete für gewählte Plattform')
     parser.add_argument('--clean', action='store_true', 
-                       help='🧹 Clean Build (lösche vorherige Builds)')
-    
-    # Windows-specific Quick Options
-    windows_group = parser.add_argument_group('Windows Optionen')
-    windows_group.add_argument('--exe-only', action='store_true', 
-                       help='🚀 Nur Executable (.exe)')
-    windows_group.add_argument('--portable-only', action='store_true', 
-                       help='📦 Nur Portable Package (.zip)')
-    windows_group.add_argument('--installer', action='store_true', 
-                       help='Inkludiere NSIS Installer')
-    windows_group.add_argument('--msi', action='store_true', 
-                       help='Inkludiere MSI Installer')
-    windows_group.add_argument('--sign', action='store_true', 
-                       help='🔐 Code-Signing aktivieren')
-    windows_group.add_argument('--no-portable', action='store_true', 
-                       help='Überspringe Portable .zip')
-    
-    # Development Options
-    dev_group = parser.add_argument_group('Entwickler Optionen')
-    dev_group.add_argument('--debug', action='store_true', 
-                       help='Debug-Modus')
-    dev_group.add_argument('--verbose', action='store_true', 
-                       help='Verbose Ausgabe')
+                       help='🧹 Bereinige vorherige Builds')
+    parser.add_argument('--portable', action='store_true', 
+                       help='📦 Erstelle zusätzlich Portable ZIP')
+    parser.add_argument('--installer', action='store_true', 
+                       help='🔧 Erstelle zusätzlich NSIS Installer')
+    parser.add_argument('--all', action='store_true', 
+                       help='🎯 Erstelle alle Pakete (EXE + ZIP + Installer)')
     
     return parser.parse_args()
 
 def main():
-    """Haupt-Build-Funktion"""
+    """Hauptfunktion"""
     try:
         # Parse Argumente
         args = parse_arguments()
         
-        # Initialize Orchestrator
-        orchestrator = BuildOrchestrator()
+        # Initialize Builder
+        builder = RiflescopeBuilder()
         
-        # Bestimme Ziel-Plattform
-        target_platform = None
-        if args.windows:
-            target_platform = 'windows'
-        elif args.macos:
-            target_platform = 'macos'
-        elif args.linux:
-            target_platform = 'linux'
-        elif args.platform:
-            target_platform = args.platform
-        
-        # Validiere Plattform-Auswahl
-        if not target_platform:
-            print("❌ Keine Ziel-Plattform angegeben!")
-            print("   Verwende: --windows, --macos, --linux oder --platform <name>")
-            print("   Beispiel: python scripts/build.py --windows")
-            return 1
-        
-        # Validiere Windows-spezifische Optionen
-        windows_options = [args.exe_only, args.portable_only, args.installer, 
-                          args.msi, args.sign, args.no_portable]
-        if any(windows_options) and target_platform != 'windows':
-            print(f"⚠️ Windows-spezifische Optionen werden ignoriert (Ziel: {target_platform})")
-        
-        # Bestimme Build-Optionen basierend auf Argumenten
+        # Build-Optionen
         build_options = {
-            'platform': target_platform,
-            target_platform: True,  # Setze Platform-Flag
+            'clean': args.clean,
+            'portable': args.portable,
+            'installer': args.installer,
+            'all': args.all
         }
         
-        # Windows-spezifische Optionen (nur wenn Windows Build)
-        if target_platform == 'windows':
-            if args.all:
-                build_options.update({
-                    'installer': True,
-                    'msi': True, 
-                    'portable': True,
-                    'all_packages': True
-                })
-            elif args.exe_only:
-                build_options.update({
-                    'portable': False,
-                    'quick': True
-                })
-            elif args.portable_only:
-                build_options.update({
-                    'portable': True,
-                    'exe_only': False,
-                    'skip_exe': True
-                })
-            else:
-                # Standard Windows Build: .exe + .zip
-                build_options.update({
-                    'portable': not args.no_portable,
-                })
-            
-            # Individual Windows Options
-            if args.installer:
-                build_options['installer'] = True
-            if args.msi:
-                build_options['msi'] = True
-            if args.sign:
-                build_options['sign'] = True
-        
-        # Universal Options
-        if args.clean:
-            build_options['clean'] = True
-        if args.debug:
-            build_options['debug'] = True
-        if args.verbose:
-            build_options['verbose'] = True
-        
-        # Zeige finale Build-Konfiguration
-        print(f"\n🔧 FINALE BUILD-KONFIGURATION:")
-        print("-" * 35)
-        print(f"   🎯 Ziel-Plattform: {target_platform.title()}")
-        for key, value in build_options.items():
-            if value and key != target_platform:
-                print(f"   ✓ {key.replace('_', ' ').title()}")
+        # Zeige Build-Konfiguration
+        print(f"\n🔧 BUILD-KONFIGURATION:")
+        print("-" * 25)
+        print(f"   EXE: ✓")
+        print(f"   Portable ZIP: {'✓' if (args.portable or args.all) else '✗'}")
+        print(f"   NSIS Installer: {'✓' if (args.installer or args.all) else '✗'}")
+        print(f"   Clean Build: {'✓' if args.clean else '✗'}")
         
         # Führe Build durch
-        success = orchestrator.run_build(build_options)
-        
-        # Zeige Ergebnisse
-        orchestrator.show_build_results(success)
+        success = builder.run_build(build_options)
         
         # Return entsprechenden Exit Code
         return 0 if success else 1
